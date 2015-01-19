@@ -200,23 +200,11 @@ def tokenstream(bstream):
         yield t
 
 
-
 userdefinedmacros = {}
 
 
 def has_catcode(x, catcode):
     return x.__class__ == TokenCode and x.catcode == catcode
-
-def check_body(n, body):
-    pass
-
-# def check_body (n, body):
-#     stream = iter(body)
-#     for i in stream:
-#         if has_catcode(i, CatCode.param):
-#             x = stream.__next__()
-#             if int(x) >= n
-
 
 def handle_def (tokenstream):
     args = []
