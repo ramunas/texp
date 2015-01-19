@@ -211,17 +211,17 @@ def handle_def (tokenstream):
     curr_arg = []
     body = []
     arg_nr = 1
-    name = tokenstream.__next__()
+    name = next(tokenstream)
     if name.__class__ != ControlSequence:
         raise "Invalid name for a macro %s" % name
     print (name)
     while True:
-        c = tokenstream.__next__()
+        c = next(tokenstream)
         if c.__class__ == ControlSequence:
             curr_arg.append(c)
         elif c.__class__ == TokenCode:
             if c.catcode == CatCode.param:
-                n = tokenstream.__next__()
+                n = next(tokenstream)
                 if n.tok != str(arg_nr):
                     raise "Arguments need to be sequential"
                 args.append(curr_arg)
@@ -230,7 +230,7 @@ def handle_def (tokenstream):
             elif c.catcode == CatCode.begin_group:
                 n = 1
                 while True:
-                    c = tokenstream.__next__()
+                    c = next(tokenstream)
                     if c == None:
                         raise "End of file unexpected while handling def"
                     if c.__class__ == TokenCode:
@@ -249,7 +249,6 @@ def handle_def (tokenstream):
         elif c == None:
             raise "End of file unexpected while handling def"
 
-    check_body(arg_nr - 1, body)
     userdefinedmacros[name.name] = (args,body)
 
 
