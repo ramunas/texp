@@ -25,13 +25,7 @@ class peakable(object):
         except StopIteration:
             self.buf = None
 
-    def peak(self):
-        return self.buf
-
     def __next__(self):
-        return self.next()
-
-    def next(self):
         a = self.buf
         if a == None:
             raise StopIteration
@@ -40,6 +34,9 @@ class peakable(object):
 
     def __iter__(self):
         return self
+
+    def peak(self):
+        return self.buf
 
 
 # 0 = Escape character, normally \
@@ -123,24 +120,24 @@ class TokenCode(Token):
 
 def control_sequence(bstream):
     name = ''
-    bstream.next()
+    next(bstream)
     cc = defaulttable[bstream.peak()]
     if cc == CatCode.letter:
         while defaulttable[bstream.peak()] == CatCode.letter:
-            name = name + bstream.next()
+            name = name + next(bstream)
         bstream.state = StreamState.skipping_blanks
     elif cc == CatCode.end_of_line:
-        bstream.next()
+        next(bstream)
         bstream.state = StreamState.middle
     else:
-        name = bstream.next()
+        name = next(bstream)
         bstream.state = StreamState.skipping_blanks
 
     return name
 
 def drop_line(bstream):
     while True:
-        c = bstream.next()
+        c = next(bstream)
         if c == None:
             break
         if defaulttable[c] == CatCode.end_of_line:
@@ -164,7 +161,6 @@ def nexttoken(bstream):
             return ControlSequence(control_sequence(bstream))
         elif cc == CatCode.space:
             next(bstream)
-            # bstream.next()
             if bstream.state == StreamState.new_line:
                 return nexttoken(bstream)
             elif bstream.state == StreamState.skipping_blanks:
@@ -173,10 +169,10 @@ def nexttoken(bstream):
                 bstream.state = StreamState.skipping_blanks
                 return TokenCode(' ', CatCode.space)
         elif cc == CatCode.ignored:
-            bstream.next()
+            next(bstream)
             return nexttoken(bstream)
         elif cc == CatCode.end_of_line:
-            bstream.next()
+            next(bstream)
             if bstream.state == StreamState.new_line:
                 bstream.state = StreamState.skipping_blanks
                 return ControlSequence('par')
@@ -188,7 +184,7 @@ def nexttoken(bstream):
             drop_line(bstream)
             return nexttoken(bstream)
         else:
-            bstream.next()
+            next(bstream)
             bstream.state = StreamState.middle
             return TokenCode(c, cc)
 
