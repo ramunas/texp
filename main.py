@@ -56,6 +56,16 @@ class resetable(object):
             self.read.append(x)
         return x
 
+class peakandresetable(object):
+    def __init__(self, stream):
+        self.stream = resetable(peakable(stream))
+
+    def __peak__(self): return self.stream.stream.__peak__()
+    def __next__(self): return self.stream.__next__()
+    def __iter__(self): return self
+    def __enter__(self): return self.__enter__()
+    def __exit__(self,e,v,t): return self.__exit__(e,v,t)
+
 
 def peak(stream, *d):
     if len(d) == 0:
@@ -253,7 +263,7 @@ class TeXException(Exception):
     pass
 
 def has_catcode(t, catcode):
-    return is_tokencode(t) and x.catcode == catcode
+    return is_tokencode(t) and t.catcode == catcode
 
 
 def handle_def (tokenstream):
@@ -277,6 +287,7 @@ def handle_def (tokenstream):
                 arg_nr = arg_nr + 1
                 curr_arg = []
             elif c.catcode == CatCode.begin_group:
+                args.append(curr_arg)
                 n = 1
                 while True:
                     c = next(tokenstream, None)
@@ -307,7 +318,7 @@ class TeXMatchError(Exception):
 
 
 def next_group(tokenstream):
-    n = 0
+    n = 1
     x = []
     while True:
         t = next(tokenstream)
@@ -324,7 +335,7 @@ def next_group(tokenstream):
     return x
 
 def next_token_or_group(tokenstream):
-    t = peak(tokenstream)
+    t = next(tokenstream)
     x = None
     if has_catcode(t, CatCode.begin_group):
         x = next_group(tokenstream)
@@ -353,7 +364,8 @@ def match_macro_pattern(pattern, tokenstream):
 
     matches = []
     m = []
-    ts = resetable(tokenstream)
+    #ts = resetable(tokenstream)
+    ts = peakandresetable(tokenstream)
     for tokens in pattern[1:]:
         if len(tokens) == 0: # non-delimited token
             matches.append(next_token_or_group(ts))
@@ -372,7 +384,7 @@ def expand_macro_body(body, args):
     expanded = []
     for i in body:
         if is_paramtoken(i):
-            expanded.append(args[i.number])
+            expanded.append(args[i.number - 1])
         else:
             expanded.append(i)
     return expanded
@@ -382,6 +394,8 @@ def apply_macro(macro,stream):
     (pattern,body) = macro
     resetable_token_stream = resetable(stream)
     matches = match_macro_pattern(pattern,resetable_token_stream)
+    print (pattern)
+    print (matches)
     return expand_macro_body(body, matches)
 
 
@@ -400,11 +414,10 @@ def expand(tokenstream):
                 m(tstream)
             elif t.name in userdefinedmacros:
                 m = userdefinedmacros[t.name]
-                expansion = apply_macro(m, tstream)
-                tstream = itertools.chain(expansion,tstream)
+                exp = apply_macro(m, tstream)
+                tstream = itertools.chain(exp,tstream)
             else:
                 # pass through the unknown control sequences
-                # pass
                 expansion.append(t)
                 # raise TeXMatchError("Undefined macro '%s'" % t.name)
         else:
@@ -417,6 +430,7 @@ def expand(tokenstream):
 
 
 expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
+# expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 
 print ("Expansion:")
 print (expansion)
