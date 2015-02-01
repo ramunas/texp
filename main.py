@@ -384,7 +384,7 @@ def expand_macro_body(body, args):
     expanded = []
     for i in body:
         if is_paramtoken(i):
-            expanded.append(args[i.number - 1])
+            expanded.extend(args[i.number - 1])
         else:
             expanded.append(i)
     return expanded
@@ -408,6 +408,8 @@ def expand(tokenstream):
     expansion = []
     while True:
         t = next(tstream, None)
+        if t == None:
+            break
         if is_controlsequence(t):
             if t.name in builtinmacros:
                 m = builtinmacros[t.name]
@@ -415,7 +417,7 @@ def expand(tokenstream):
             elif t.name in userdefinedmacros:
                 m = userdefinedmacros[t.name]
                 exp = apply_macro(m, tstream)
-                tstream = itertools.chain(exp,tstream)
+                tstream = itertools.chain(iter(exp),tstream)
             else:
                 # pass through the unknown control sequences
                 expansion.append(t)
@@ -423,8 +425,6 @@ def expand(tokenstream):
         else:
             expansion.append(t)
 
-        if t == None:
-            break
 
     return expansion
 
