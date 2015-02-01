@@ -372,10 +372,17 @@ def expand_macro_body(body, args):
     expanded = []
     for i in body:
         if is_paramtoken(i):
-            expanded.add(args[i.number])
+            expanded.append(args[i.number])
         else:
-            expanded.add(i)
+            expanded.append(i)
     return expanded
+
+
+def apply_macro(macro,stream):
+    (pattern,body) = macro
+    resetable_token_stream = resetable(stream)
+    matches = match_macro_pattern(pattern,resetable_token_stream)
+    return expand_macro_body(body, matches)
 
 
 builtinmacros = {
@@ -384,18 +391,39 @@ builtinmacros = {
 
 def expand(tokenstream):
     tstream = tokenstream
-    for t in tstream:
+    expansion = []
+    while True:
+        t = next(tstream, None)
         if is_controlsequence(t):
-            m = builtinmacros.get(t.name)
-            um = userdefinedmacros.get(t.name)
-            if m != None:
+            if t.name in builtinmacros:
+                m = builtinmacros[t.name]
                 m(tstream)
-                # print ("yes")
+            elif t.name in userdefinedmacros:
+                m = userdefinedmacros[t.name]
+                expansion = apply_macro(m, tstream)
+                tstream = itertools.chain(expansion,tstream)
+            else:
+                # pass through the unknown control sequences
+                # pass
+                expansion.append(t)
+                # raise TeXMatchError("Undefined macro '%s'" % t.name)
+        else:
+            expansion.append(t)
 
-# print (list(tokenstream(peakable(bytestream('main.tex')))))
-expand(tokenstream(peakable(bytestream('test2.tex'))))
-print (userdefinedmacros);
-# expand(tokenstream(peakable(bytestream('main.tex'))))
+        if t == None:
+            break
+
+    return expansion
+
+
+expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
+
+print ("Expansion:")
+print (expansion)
+print ()
+print ("User defined macros:")
+print (userdefinedmacros)
+
 
 # print (match_prefix(iter([1,2,3]), resetable(iter([1,2,3,4]))))
 # print (match_prefix(iter([4,2,3]), resetable(iter([1,2,3,4]))))
