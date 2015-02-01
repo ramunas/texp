@@ -17,26 +17,32 @@ class peakable(object):
     def __init__(self, stream):
         self.buf = None
         self.stream = stream
-        self.__advance__()
 
-    def __advance__(self):
-        try:
-            self.buf = self.stream.__next__()
-        except StopIteration:
-            self.buf = None
+    def __peak__(self):
+        if self.buf == None:
+            self.buf = next(self.stream)
+        return self.buf
 
     def __next__(self):
-        a = self.buf
-        if a == None:
-            raise StopIteration
-        self.__advance__()
-        return a
+        x = self.__peak__()
+        self.buf = None
+        return x
 
     def __iter__(self):
         return self
 
     def peak(self):
-        return self.buf
+        return self.__peak__()
+
+
+def peak(stream, *d):
+    if len(d) == 0:
+        return stream.__peak__()
+    else:
+        try:
+            return stream.__peak__()
+        except StopIteration:
+            return d[0]
 
 
 # 0 = Escape character, normally \
@@ -121,7 +127,8 @@ class TokenCode(Token):
 def control_sequence(bstream):
     name = ''
     next(bstream)
-    cc = defaulttable[bstream.peak()]
+    # cc = defaulttable[bstream.peak()]
+    cc = defaulttable[peak(bstream)]
     if cc == CatCode.letter:
         while defaulttable[bstream.peak()] == CatCode.letter:
             name = name + next(bstream)
