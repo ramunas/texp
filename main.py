@@ -30,6 +30,32 @@ class peakable(object):
     def __iter__(self):
         return self
 
+class resetable(object):
+    def __iter__(self): return self
+
+    def __init__(self, stream):
+        self.stream = stream
+        self.read = None
+
+    def __reset__(self):
+        self.stream = itertools.chain(self.read, self.stream)
+        self.read = None
+
+    def __enter__(self):
+        self.read = []
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type == StopIteration:
+            self.__reset__()
+            return True
+        self.read = None
+
+    def __next__(self):
+        x = next(self.stream)
+        if self.read != None:
+            self.read.append(x)
+        return x
+
 
 def peak(stream, *d):
     if len(d) == 0:
@@ -276,6 +302,68 @@ def handle_def (tokenstream):
     userdefinedmacros[name.name] = (args,body)
 
 
+class TeXMatchError(Exception):
+    pass
+
+
+def next_group(tokenstream):
+    n = 0
+    x = []
+    while True:
+        t = next(tokenstream)
+        if has_catcode(t, CatCode.begin_group):
+            n = n + 1
+        elif has_catcode(t, CatCode.end_group):
+            n = n - 1
+
+        if n == 0:
+            break
+
+        x.append(t)
+
+    return x
+
+def next_token_or_group(tokenstream):
+    t = peak(tokenstream)
+    x = None
+    if has_catcode(t, CatCode.begin_group):
+        x = next_group(tokenstream)
+    else:
+        x = t
+
+    return x
+
+
+def match_prefix(pref, stream):
+    with stream:
+        for i in pref:
+            if i != next(stream):
+                raise StopIteration
+        return True
+    return False
+
+
+def match_macro_pattern(pattern, tokenstream):
+    tokens = pattern[0]
+
+    # match the first pattern
+    for t in tokens:
+        if t != next(tokenstream):
+            raise TeXMatchError("Pattern does not match")
+
+    matches = []
+    m = []
+    for tokens in pattern[1:]:
+        if len(tokens) == 0: # non-delimited token
+            matches.append(next_token_or_group(tokenstream))
+        else: # delimited, append until match is found
+            pass # TODO
+
+
+def expand_macro_body(macro, args):
+    pass
+
+
 builtinmacros = {
         'def' : handle_def
         }
@@ -294,4 +382,8 @@ def expand(tokenstream):
 expand(tokenstream(peakable(bytestream('test2.tex'))))
 print (userdefinedmacros);
 # expand(tokenstream(peakable(bytestream('main.tex'))))
+
+# print (match_prefix(iter([1,2,3]), resetable(iter([1,2,3,4]))))
+# print (match_prefix(iter([4,2,3]), resetable(iter([1,2,3,4]))))
+# print (match_prefix(iter([4,2,3]), iter([1,2,3,4])))
 
