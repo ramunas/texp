@@ -122,6 +122,12 @@ class TokenCode(Token):
     def __repr__(self):
         return ('"%s" %s' % (self.tok, self.catcode.name))
 
+def is_controlsequence(t):
+    return t.__class__ == ControlSequence
+
+def is_tokencode(t):
+    return t.__class__ == TokenCode
+
 
 def control_sequence(bstream):
     name = ''
@@ -222,9 +228,9 @@ def handle_def (tokenstream):
     print (name)
     while True:
         c = next(tokenstream)
-        if c.__class__ == ControlSequence:
+        if is_controlsequence(c):
             curr_arg.append(c)
-        elif c.__class__ == TokenCode:
+        elif is_tokencode(c):
             if c.catcode == CatCode.param:
                 n = next(tokenstream)
                 if n.tok != str(arg_nr):
@@ -238,7 +244,7 @@ def handle_def (tokenstream):
                     c = next(tokenstream)
                     if c == None:
                         raise "End of file unexpected while handling def"
-                    if c.__class__ == TokenCode:
+                    if is_tokencode(c):
                         if c.catcode == CatCode.begin_group:
                             n = n + 1
                         elif c.catcode == CatCode.end_group:
@@ -264,7 +270,7 @@ builtinmacros = {
 def expand(tokenstream):
     tstream = tokenstream
     for t in tstream:
-        if t.__class__ == ControlSequence:
+        if is_controlsequence(t):
             m = builtinmacros.get(t.name)
             um = userdefinedmacros.get(t.name)
             if m != None:
