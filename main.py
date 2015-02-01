@@ -368,8 +368,14 @@ def match_macro_pattern(pattern, tokenstream):
     return matches
 
 
-def expand_macro_body(macro, args):
-    pass
+def expand_macro_body(body, args):
+    expanded = []
+    for i in body:
+        if is_paramtoken(i):
+            expanded.add(args[i.number])
+        else:
+            expanded.add(i)
+    return expanded
 
 
 builtinmacros = {
