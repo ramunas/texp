@@ -32,15 +32,15 @@ class peakable(object):
 
 
 def peak(stream, *d):
-    if len(d) == 1:
+    if len(d) == 0:
+        return stream.__peak__()
+    elif len(d) == 1:
         try:
             return stream.__peak__()
         except StopIteration:
             return d[0]
-    elif len(d) > 2:
-        raise TypeError ("peak expected at most 2 arguments, got %d" % len(d))
     else:
-        return stream.__peak__()
+        raise TypeError ("peak expected at most 2 arguments, got %d" % len(d))
 
 
 
@@ -214,6 +214,9 @@ def tokenstream(bstream):
 userdefinedmacros = {}
 
 
+class TeXException(Exception):
+    pass
+
 def has_catcode(x, catcode):
     return x.__class__ == TokenCode and x.catcode == catcode
 
@@ -223,8 +226,8 @@ def handle_def (tokenstream):
     body = []
     arg_nr = 1
     name = next(tokenstream)
-    if name.__class__ != ControlSequence:
-        raise "Invalid name for a macro %s" % name
+    if not(is_controlsequence(name)):
+        raise TeXException ("Invalid name for a macro %s" % name)
     print (name)
     while True:
         c = next(tokenstream)
@@ -234,7 +237,7 @@ def handle_def (tokenstream):
             if c.catcode == CatCode.param:
                 n = next(tokenstream)
                 if n.tok != str(arg_nr):
-                    raise "Arguments need to be sequential"
+                    raise TeXException ("Arguments need to be sequential")
                 args.append(curr_arg)
                 arg_nr = arg_nr + 1
                 curr_arg = []
@@ -243,7 +246,7 @@ def handle_def (tokenstream):
                 while True:
                     c = next(tokenstream)
                     if c == None:
-                        raise "End of file unexpected while handling def"
+                        raise TeXException("End of file unexpected while handling def")
                     if is_tokencode(c):
                         if c.catcode == CatCode.begin_group:
                             n = n + 1
@@ -258,7 +261,7 @@ def handle_def (tokenstream):
             else:
                 curr_arg.append(c)
         elif c == None:
-            raise "End of file unexpected while handling def"
+            raise TeXException("End of file unexpected while handling def")
 
     userdefinedmacros[name.name] = (args,body)
 
