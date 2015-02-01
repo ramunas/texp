@@ -12,7 +12,6 @@ def bytestream(file):
             break
         yield c
 
-
 class peakable(object):
     def __init__(self, stream):
         self.buf = None
@@ -31,18 +30,18 @@ class peakable(object):
     def __iter__(self):
         return self
 
-    def peak(self):
-        return self.__peak__()
-
 
 def peak(stream, *d):
-    if len(d) == 0:
-        return stream.__peak__()
-    else:
+    if len(d) == 1:
         try:
             return stream.__peak__()
         except StopIteration:
             return d[0]
+    elif len(d) > 2:
+        raise TypeError ("peak expected at most 2 arguments, got %d" % len(d))
+    else:
+        return stream.__peak__()
+
 
 
 # 0 = Escape character, normally \
@@ -127,10 +126,9 @@ class TokenCode(Token):
 def control_sequence(bstream):
     name = ''
     next(bstream)
-    # cc = defaulttable[bstream.peak()]
     cc = defaulttable[peak(bstream)]
     if cc == CatCode.letter:
-        while defaulttable[bstream.peak()] == CatCode.letter:
+        while defaulttable[peak(bstream)] == CatCode.letter:
             name = name + next(bstream)
         bstream.state = StreamState.skipping_blanks
     elif cc == CatCode.end_of_line:
@@ -160,7 +158,7 @@ class StreamState(Enum):
     skipping_blanks = 2
 
 def nexttoken(bstream):
-    c = bstream.peak()
+    c = peak(bstream, None)
     if c != None:
         cc = defaulttable[c]
 
