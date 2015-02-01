@@ -353,11 +353,19 @@ def match_macro_pattern(pattern, tokenstream):
 
     matches = []
     m = []
+    ts = resetable(tokenstream)
     for tokens in pattern[1:]:
         if len(tokens) == 0: # non-delimited token
-            matches.append(next_token_or_group(tokenstream))
+            matches.append(next_token_or_group(ts))
         else: # delimited, append until match is found
-            pass # TODO
+            while True:
+                if match_prefix(tokens, ts):
+                    matches.add(m)
+                    m = []
+                    break
+                else:
+                    m.add(next(ts))
+    return matches
 
 
 def expand_macro_body(macro, args):
