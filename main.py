@@ -381,13 +381,12 @@ def match_macro_pattern(pattern, tokenstream):
 
 
 def expand_macro_body(body, args):
-    expanded = []
     for i in body:
         if is_paramtoken(i):
-            expanded.extend(args[i.number - 1])
+            for x in args[i.number - 1]:
+                yield x
         else:
-            expanded.append(i)
-    return expanded
+            yield i
 
 
 def apply_macro(macro,stream):
@@ -405,7 +404,6 @@ builtinmacros = {
 
 def expand(tokenstream):
     tstream = tokenstream
-    expansion = []
     while True:
         t = next(tstream, None)
         if t == None:
@@ -420,20 +418,17 @@ def expand(tokenstream):
                 tstream = itertools.chain(iter(exp),tstream)
             else:
                 # pass through the unknown control sequences
-                expansion.append(t)
+                yield t
                 # raise TeXMatchError("Undefined macro '%s'" % t.name)
         else:
-            expansion.append(t)
-
-
-    return expansion
+            yield t
 
 
 expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 # expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 
 print ("Expansion:")
-print (expansion)
+print (list(expansion))
 print ()
 print ("User defined macros:")
 print (userdefinedmacros)
