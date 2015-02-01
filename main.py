@@ -56,15 +56,10 @@ class resetable(object):
             self.read.append(x)
         return x
 
-class peakandresetable(object):
-    def __init__(self, stream):
-        self.stream = resetable(peakable(stream))
-
-    def __peak__(self): return self.stream.stream.__peak__()
-    def __next__(self): return self.stream.__next__()
-    def __iter__(self): return self
-    def __enter__(self): return self.__enter__()
-    def __exit__(self,e,v,t): return self.__exit__(e,v,t)
+    def __peak__(self):
+        x = next(self.stream)
+        self.stream = itertools.chain([x],self.stream)
+        return x
 
 
 def peak(stream, *d):
@@ -364,8 +359,7 @@ def match_macro_pattern(pattern, tokenstream):
 
     matches = []
     m = []
-    #ts = resetable(tokenstream)
-    ts = peakandresetable(tokenstream)
+    ts = resetable(tokenstream)
     for tokens in pattern[1:]:
         if len(tokens) == 0: # non-delimited token
             matches.append(next_token_or_group(ts))
