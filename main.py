@@ -122,11 +122,20 @@ class TokenCode(Token):
     def __repr__(self):
         return ('"%s" %s' % (self.tok, self.catcode.name))
 
+class ParamToken(Token):
+    def __init__(self,n):
+        self.number = n
+    def __repr__(self):
+        return "#%d" % self.number
+
 def is_controlsequence(t):
     return t.__class__ == ControlSequence
 
 def is_tokencode(t):
     return t.__class__ == TokenCode
+
+def is_paramtoken(t):
+    return t.__class__ == ParamToken
 
 
 def control_sequence(bstream):
@@ -217,8 +226,9 @@ userdefinedmacros = {}
 class TeXException(Exception):
     pass
 
-def has_catcode(x, catcode):
-    return x.__class__ == TokenCode and x.catcode == catcode
+def has_catcode(t, catcode):
+    return is_tokencode(t) and x.catcode == catcode
+
 
 def handle_def (tokenstream):
     args = []
@@ -228,7 +238,6 @@ def handle_def (tokenstream):
     name = next(tokenstream)
     if not(is_controlsequence(name)):
         raise TeXException ("Invalid name for a macro %s" % name)
-    print (name)
     while True:
         c = next(tokenstream)
         if is_controlsequence(c):
@@ -244,7 +253,7 @@ def handle_def (tokenstream):
             elif c.catcode == CatCode.begin_group:
                 n = 1
                 while True:
-                    c = next(tokenstream)
+                    c = next(tokenstream, None)
                     if c == None:
                         raise TeXException("End of file unexpected while handling def")
                     if is_tokencode(c):
@@ -252,8 +261,9 @@ def handle_def (tokenstream):
                             n = n + 1
                         elif c.catcode == CatCode.end_group:
                             n = n - 1
-                        # elif c.catcode == CatCode.param:
-                        #     p = tokenstream.__next__()
+                        elif c.catcode == CatCode.param:
+                            p = next(tokenstream)
+                            c = ParamToken(int(p.tok))
                     if n == 0:
                         break
                     body.append(c)
