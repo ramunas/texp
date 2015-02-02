@@ -35,30 +35,31 @@ class resetable(object):
 
     def __init__(self, stream):
         self.stream = stream
-        self.read = None
-
-    def __reset__(self):
-        self.stream = itertools.chain(self.read, self.stream)
-        self.read = None
+        self.read = []
 
     def __enter__(self):
-        self.read = []
+        self.read.append([])
+
+    def __reset__(self):
+        self.stream = itertools.chain(self.read.pop(), self.stream)
 
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type == StopIteration:
             self.__reset__()
             return True
-        self.read = None
 
     def __next__(self):
         x = next(self.stream)
-        if self.read != None:
-            self.read.append(x)
+        if len(self.read) != 0:
+            self.read[-1:].append(x)
         return x
 
     def __peak__(self):
-        x = next(self.stream)
-        self.stream = itertools.chain([x],self.stream)
+        try:
+            self.__enter__()
+            x = next(self)
+        finally:
+            self.__reset__()
         return x
 
 
