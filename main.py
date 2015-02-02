@@ -39,19 +39,19 @@ class resetable(object):
 
     def __enter__(self):
         self.read.append([])
+        return self
 
     def __reset__(self):
-        self.stream = itertools.chain(self.read.pop(), self.stream)
+        s = self.read.pop()
+        self.stream = itertools.chain(iter(s), self.stream)
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type == StopIteration:
-            self.__reset__()
-            return True
+        self.__reset__()
 
     def __next__(self):
         x = next(self.stream)
         if len(self.read) != 0:
-            self.read[-1:].append(x)
+            self.read[-1].append(x)
         return x
 
     def __peak__(self):
@@ -342,12 +342,10 @@ def next_token_or_group(tokenstream):
 
 
 def match_prefix(pref, stream):
-    stream.__enter__()
-    for i in pref:
-        if i != next(stream):
-            stream.__reset__()
-            return False
-    stream.__exit__()
+    with stream as s:
+        for i in pref:
+            if i != next(s, None):
+                return False
     return True
 
 
@@ -420,8 +418,9 @@ def expand(tokenstream):
             yield t
 
 
-expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 # expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
+
+expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 
 print ("Expansion:")
 print (list(expansion))
@@ -429,8 +428,16 @@ print ()
 print ("User defined macros:")
 print (userdefinedmacros)
 
-
 # print (match_prefix(iter([1,2,3]), resetable(iter([1,2,3,4]))))
 # print (match_prefix(iter([4,2,3]), resetable(iter([1,2,3,4]))))
-# print (match_prefix(iter([4,2,3]), iter([1,2,3,4])))
-
+# x = resetable(iter([1,2,3]))
+# print (match_prefix(iter([1,2,3]),x))
+# print (list (x))
+# x = resetable(iter([1,2,3]))
+# print (match_prefix(iter([4,2,3]),x))
+# print (list (x))
+# a = resetable(iter([1,2,3]))
+# with a:
+#     for i in a:
+#         print (i)
+# print (list(a))
