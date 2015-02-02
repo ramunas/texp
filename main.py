@@ -43,6 +43,9 @@ class resetable(object):
     def __reset__(self):
         self.stream = itertools.chain(self.read.pop(), self.stream)
 
+    def __exit__(self):
+        self.read.pop()
+
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type == StopIteration:
             self.__reset__()
@@ -342,12 +345,13 @@ def next_token_or_group(tokenstream):
 
 
 def match_prefix(pref, stream):
-    with stream:
-        for i in pref:
-            if i != next(stream):
-                raise StopIteration
-        return True
-    return False
+    stream.__enter__()
+    for i in pref:
+        if i != next(stream):
+            stream.__reset__()
+            return False
+    stream.__exit__()
+    return True
 
 
 def match_macro_pattern(pattern, tokenstream):
@@ -365,13 +369,16 @@ def match_macro_pattern(pattern, tokenstream):
         if len(tokens) == 0: # non-delimited token
             matches.append(next_token_or_group(ts))
         else: # delimited, append until match is found
-            while True:
-                if match_prefix(tokens, ts):
-                    matches.add(m)
-                    m = []
-                    break
-                else:
-                    m.add(next(ts))
+            try:
+                while True:
+                    if match_prefix(tokens, ts):
+                        matches.append(m)
+                        m = []
+                        break
+                    else:
+                        m.append(next(ts))
+            except StopIteration:
+                raise TeXMatchError("Stream ended while matching a macro pattern")
     return matches
 
 
@@ -386,10 +393,7 @@ def expand_macro_body(body, args):
 
 def apply_macro(macro,stream):
     (pattern,body) = macro
-    resetable_token_stream = resetable(stream)
-    matches = match_macro_pattern(pattern,resetable_token_stream)
-    print (pattern)
-    print (matches)
+    matches = match_macro_pattern(pattern,stream)
     return expand_macro_body(body, matches)
 
 
