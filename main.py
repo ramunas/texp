@@ -146,6 +146,8 @@ class ControlSequence(Token):
         self.name = name
     def __repr__(self):
         return '\\' + self.name
+    def __eq__(self,x):
+        return x.__class__ == ControlSequence and x.name == self.name
 
 class TokenCode(Token):
     def __init__(self, t, catcode):
@@ -153,12 +155,16 @@ class TokenCode(Token):
         self.catcode = catcode
     def __repr__(self):
         return ('"%s" %s' % (self.tok, self.catcode.name))
+    def __eq__(self,x):
+        return x.__class__ == TokenCode and x.tok == self.tok and x.catcode == self.catcode
 
 class ParamToken(Token):
     def __init__(self,n):
         self.number = n
     def __repr__(self):
         return "#%d" % self.number
+    def __eq__(self,x):
+        return x.__class__ == ParamToken and x.number == self.number
 
 def is_controlsequence(t):
     return t.__class__ == ControlSequence
@@ -344,8 +350,12 @@ def next_token_or_group(tokenstream):
 def match_prefix(pref, stream):
     with stream as s:
         for i in pref:
-            if i != next(s, None):
+            x = next(s,None)
+            # print ("%s = %s" % (i,x))
+            if i != x:
+                # print ("Not true")
                 return False
+    # print ("True")
     return True
 
 
@@ -420,6 +430,8 @@ def expand(tokenstream):
 
 # expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 
+print(ControlSequence("x")==ControlSequence("x"))
+
 expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 
 print ("Expansion:")
@@ -427,6 +439,7 @@ print (list(expansion))
 print ()
 print ("User defined macros:")
 print (userdefinedmacros)
+
 
 # print (match_prefix(iter([1,2,3]), resetable(iter([1,2,3,4]))))
 # print (match_prefix(iter([4,2,3]), resetable(iter([1,2,3,4]))))
