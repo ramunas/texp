@@ -43,9 +43,6 @@ class resetable(object):
     def __reset__(self):
         self.stream = itertools.chain(self.read.pop(), self.stream)
 
-    def __exit__(self):
-        self.read.pop()
-
     def __exit__(self, exc_type, exc_value, traceback):
         if exc_type == StopIteration:
             self.__reset__()
