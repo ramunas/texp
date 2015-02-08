@@ -2,6 +2,45 @@
 import unittest
 from texp import *
 
+class TestResetableStream(unittest.TestCase):
+
+    def test_resetable1(self):
+        x = [1,2,3]
+        s = resetable(iter(x))
+        s.__enter__()
+        list(s)
+        s.__reset__()
+        self.assertEqual(x, list(s))
+
+    def test_resetable2(self):
+        x = [1,2,3]
+        s = resetable(iter(x))
+        list(s)
+        self.assertNotEqual(x, list(s))
+
+    def test_resetable3(self):
+        x = [1,2,3]
+        s = resetable(iter(x))
+        with s:
+            list(s)
+        self.assertEqual(x, list(s))
+
+    def test_resetable4(self):
+        x = [1,2,3]
+        s = resetable(iter(x))
+        with s:
+            with s:
+                list(s)
+            list(s)
+        self.assertEqual(x, list(s))
+
+    def test_resetable_peak(self):
+        x = [1,2,3]
+        s = resetable(iter(x))
+        self.assertEqual(peak(s), 1)
+        self.assertEqual(list(s),x)
+
+
 class TestTeX(unittest.TestCase):
 
     def setUp(self):
@@ -39,3 +78,4 @@ class TestTeX(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
