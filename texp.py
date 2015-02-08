@@ -296,6 +296,25 @@ def read_params(tokenstream):
     return args
 
 
+def read_body(tokenstream):
+    n = 1
+    t = next(tokenstream)
+    body = []
+    if has_catcode(t, CatCode.begin_group):
+        while True:
+            t = next(tokenstream)
+            if has_catcode(t, CatCode.begin_group):
+                n = n + 1
+            elif has_catcode(t, CatCode.end_group):
+                n = n - 1
+            if n == 0:
+                break
+            body.append(t)
+    else:
+        raise TeXException("Failed to parse body")
+    return body
+
+
 
 def handle_def (tokenstream):
     args = []

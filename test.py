@@ -123,6 +123,13 @@ class TestTeX(unittest.TestCase):
         tk = lambda s: list(self.tok(s))
         self.assertEqual([tk('pref'),tk('delim1'),tk('delim2')], args)
 
+    def test_read_body(self):
+        t = "body #1 \\text{#2} #3"
+        s1 = self.tok("{%s}" % t)
+        s2 = self.tok(t)
+        b = read_body(s1)
+        self.assertEqual(list(b), list(s2))
+
     def test_match_macro_pattern(self):
         pass
 
