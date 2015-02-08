@@ -23,5 +23,19 @@ class TestTeX(unittest.TestCase):
         self.assertFalse (match_prefix(iter([4,2,3]), rs))
         self.assertEqual([1,2,3,4], list(rs))
 
+    def test_tokenizer_text(self):
+        text = 'text'
+        s = resetable(iter(text))
+        e = [ TokenCode(x, CatCode.letter) for x in iter(text) ]
+        t = list(tokenstream(s))
+        self.assertEqual(t, e)
+
+    def test_tokenizer_macro(self):
+        text = '\macro  x'
+        s = resetable(iter(text))
+        t = list(tokenstream(s))
+        e = [ControlSequence('macro'), TokenCode('x', CatCode.letter)]
+        self.assertEqual(t, e)
+
 if __name__ == '__main__':
     unittest.main()

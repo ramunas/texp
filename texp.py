@@ -147,7 +147,7 @@ class Token(StructEq):
     pass
 
 
-class ControlSequence(Token, StructEq):
+class ControlSequence(Token):
     def __init__(self, name):
         self.name = name
     def __repr__(self):
