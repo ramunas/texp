@@ -315,6 +315,26 @@ def read_body(tokenstream):
     return body
 
 
+def find_params(tokenstream):
+    for i in tokenstream:
+        if has_catcode(i, CatCode.param):
+            yield next(tokenstream)
+
+def find_highest_param(tokenstream):
+    return max ([int(x.tok) for x in find_params(tokenstream)])
+
+
+def read_def(tokenstream):
+    cname = next(tokenstream)
+    if not(is_controlsequence(cname)):
+        raise TeXException("Control sequence expected")
+    params = read_params(tokenstream)
+    body = read_body(tokenstream)
+    h = find_highest_param(iter(body))
+    if h > len(list(params)) - 1:
+        raise TeXException("Body has undefined parameters")
+    return (cname, params, body)
+
 
 def handle_def (tokenstream):
     args = []

@@ -123,12 +123,32 @@ class TestTeX(unittest.TestCase):
         tk = lambda s: list(self.tok(s))
         self.assertEqual([tk('pref'),tk('delim1'),tk('delim2')], args)
 
+
+    def test_find_params(self):
+        p = find_params(self.tok('#1 #2 {#3} #1'))
+        self.assertEqual(list(p), [TokenCode(x, CatCode.other) for x in ['1','2','3','1']])
+
+    def test_find_highest_param(self):
+        h = find_highest_param(self.tok('#1 #2 {#3} #1'))
+        self.assertEqual(h, 3)
+
     def test_read_body(self):
         t = "body #1 \\text{#2} #3"
-        s1 = self.tok("{%s}" % t)
+        s1 = resetable(self.tok("{%s}" % t))
         s2 = self.tok(t)
         b = read_body(s1)
         self.assertEqual(list(b), list(s2))
+
+    def test_def(self):
+        s = resetable(self.tok("\\name#1#2#3{#1#2#3}"))
+        (n,p,b) = read_def(s)
+        self.assertEqual(n.name, "name")
+        self.assertEqual([[],[],[],[]], p)
+        self.assertEqual(list(b), list(self.tok("#1#2#3")))
+
+        s = resetable(self.tok("\\name#1#2#3{#1#2#4#3}"))
+        with self.assertRaises(TeXException):
+            (n,p,b) = read_def(s)
 
     def test_match_macro_pattern(self):
         pass
