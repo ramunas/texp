@@ -344,11 +344,9 @@ def next_token_or_group(tokenstream):
     t = next(tokenstream)
     x = None
     if has_catcode(t, CatCode.begin_group):
-        x = next_group(tokenstream)
+        return next_group(tokenstream)
     else:
-        x = t
-
-    return x
+        return [t]
 
 
 def match_prefix(pref, resetable_stream):

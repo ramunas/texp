@@ -86,6 +86,18 @@ class TestTeX(unittest.TestCase):
         with self.assertRaises(StopIteration):
             group = next_group(s)
 
+    def test_next_token_or_group(self):
+        s = tokenstream(resetable(iter('{group}')))
+        group = next_token_or_group(s)
+        res = list(tokenstream(resetable(iter('group'))))
+        self.assertEqual(res, list(group))
+
+        s = tokenstream(resetable(iter('g')))
+        group = next_token_or_group(s)
+        res = list(tokenstream(resetable(iter('g'))))
+        self.assertEqual(res, list(group))
+
+
 
 if __name__ == '__main__':
     unittest.main()
