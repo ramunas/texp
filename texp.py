@@ -4,6 +4,11 @@ from enum import Enum
 import itertools
 
 
+class StructEq(object):
+    def __eq__(self,x):
+        return isinstance(self, x.__class__) and self.__dict__ == x.__dict__
+
+
 def bytestream(file):
     f = open(file)
     while True:
@@ -138,16 +143,16 @@ class CharCatCodeTable(dict):
 defaulttable = CharCatCodeTable()
 
 
-class Token(object):
+class Token(StructEq):
     pass
 
-class ControlSequence(Token):
+
+class ControlSequence(Token, StructEq):
     def __init__(self, name):
         self.name = name
     def __repr__(self):
         return '\\' + self.name
-    def __eq__(self,x):
-        return x.__class__ == ControlSequence and x.name == self.name
+
 
 class TokenCode(Token):
     def __init__(self, t, catcode):
@@ -155,16 +160,14 @@ class TokenCode(Token):
         self.catcode = catcode
     def __repr__(self):
         return ('"%s" %s' % (self.tok, self.catcode.name))
-    def __eq__(self,x):
-        return x.__class__ == TokenCode and x.tok == self.tok and x.catcode == self.catcode
+
 
 class ParamToken(Token):
     def __init__(self,n):
         self.number = n
     def __repr__(self):
         return "#%d" % self.number
-    def __eq__(self,x):
-        return x.__class__ == ParamToken and x.number == self.number
+
 
 def is_controlsequence(t):
     return t.__class__ == ControlSequence
@@ -347,15 +350,12 @@ def next_token_or_group(tokenstream):
     return x
 
 
-def match_prefix(pref, stream):
-    with stream as s:
+def match_prefix(pref, resetable_stream):
+    with resetable_stream as s:
         for i in pref:
             x = next(s,None)
-            # print ("%s = %s" % (i,x))
             if i != x:
-                # print ("Not true")
                 return False
-    # print ("True")
     return True
 
 
@@ -430,27 +430,16 @@ def expand(tokenstream):
 
 # expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 
-print(ControlSequence("x")==ControlSequence("x"))
+def main():
+   expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 
-expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
-
-print ("Expansion:")
-print (list(expansion))
-print ()
-print ("User defined macros:")
-print (userdefinedmacros)
+   print ("Expansion:")
+   print (list(expansion))
+   print ()
+   print ("User defined macros:")
+   print (userdefinedmacros)
 
 
-# print (match_prefix(iter([1,2,3]), resetable(iter([1,2,3,4]))))
-# print (match_prefix(iter([4,2,3]), resetable(iter([1,2,3,4]))))
-# x = resetable(iter([1,2,3]))
-# print (match_prefix(iter([1,2,3]),x))
-# print (list (x))
-# x = resetable(iter([1,2,3]))
-# print (match_prefix(iter([4,2,3]),x))
-# print (list (x))
-# a = resetable(iter([1,2,3]))
-# with a:
-#     for i in a:
-#         print (i)
-# print (list(a))
+if __name__ == '__main__':
+    main ()
+
