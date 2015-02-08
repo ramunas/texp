@@ -76,6 +76,17 @@ class TestTeX(unittest.TestCase):
         e = [ControlSequence('macro'), TokenCode('x', CatCode.letter)]
         self.assertEqual(t, e)
 
+    def test_next_group(self):
+        s = tokenstream(resetable(iter('group}')))
+        group = next_group(s)
+        res = list(tokenstream(resetable(iter('group'))))
+        self.assertEqual(res, list(group))
+
+        s = tokenstream(resetable(iter('{group}')))
+        with self.assertRaises(StopIteration):
+            group = next_group(s)
+
+
 if __name__ == '__main__':
     unittest.main()
 

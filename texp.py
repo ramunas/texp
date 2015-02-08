@@ -322,6 +322,7 @@ class TeXMatchError(Exception):
     pass
 
 
+# assumes that the begin_group token was consumed before calling this
 def next_group(tokenstream):
     n = 1
     x = []
