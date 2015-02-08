@@ -98,6 +98,35 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(res, list(group))
 
 
+    def tok(self,s):
+        return tokenstream(resetable(iter(s)))
+
+    def test_read_params(self):
+        s = resetable(self.tok('#1{'))
+        args = read_params(s)
+        self.assertEqual([[],[]], args)
+
+        s = resetable(self.tok('#1delim{'))
+        args = read_params(s)
+        self.assertEqual([[],list(self.tok('delim'))], args)
+
+        s = resetable(self.tok('#1#2{'))
+        args = read_params(s)
+        self.assertEqual([[],[],[]], args)
+
+        s = resetable(self.tok('#1#3{'))
+        with self.assertRaises(TeXException):
+            args = read_params(s)
+
+        s = resetable(self.tok('pref#1delim1#2delim2{'))
+        args = read_params(s)
+        tk = lambda s: list(self.tok(s))
+        self.assertEqual([tk('pref'),tk('delim1'),tk('delim2')], args)
+
+    def test_match_macro_pattern(self):
+        pass
+
+
 
 if __name__ == '__main__':
     unittest.main()

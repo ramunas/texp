@@ -271,6 +271,32 @@ def has_catcode(t, catcode):
     return is_tokencode(t) and t.catcode == catcode
 
 
+def read_params(tokenstream):
+    arg_nr = 1
+    curr_arg = []
+    args = []
+    while True:
+        t = peak(tokenstream)
+        if has_catcode(t, CatCode.param):
+            t = next(tokenstream)
+            n = next(tokenstream)
+            if is_tokencode(n):
+                if int(n.tok) != arg_nr:
+                    raise TeXException("Arguments need to be sequential")
+                args.append(curr_arg)
+                arg_nr = arg_nr + 1
+                curr_arg = []
+            else:
+                raise TeXException("Not an integer")
+        elif has_catcode(t, CatCode.begin_group):
+            args.append(curr_arg)
+            break
+        else:
+            curr_arg.append(next(tokenstream))
+    return args
+
+
+
 def handle_def (tokenstream):
     args = []
     curr_arg = []
