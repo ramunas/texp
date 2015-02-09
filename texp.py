@@ -140,7 +140,8 @@ class CharCatCodeTable(dict):
         else:
             return CatCode.other
 
-defaulttable = CharCatCodeTable()
+
+defaultcatcode_table = CharCatCodeTable()
 
 
 class Token(StructEq):
@@ -169,23 +170,23 @@ def is_tokencode(t):
     return t.__class__ == TokenCode
 
 
-def control_sequence(bstream):
+def control_sequence(bstream, catcode_table):
     name = ''
 
     n = next(bstream,None)
     if n == None:
         raise TeXException("End of file unexpected while parsing a control sequence")
 
-    if defaulttable[n] != CatCode.escape:
+    if catcode_table[n] != CatCode.escape:
         raise TeXException("Escape char expected")
 
     n = peak(bstream,None)
     if n == None:
         raise TeXException("End of file unexpected while parsing a control sequence")
 
-    cc = defaulttable[peak(bstream)]
+    cc = catcode_table[peak(bstream)]
     if cc == CatCode.letter:
-        while peak(bstream,None) != None and defaulttable[peak(bstream)] == CatCode.letter:
+        while peak(bstream,None) != None and catcode_table[peak(bstream)] == CatCode.letter:
             name = name + next(bstream)
         bstream.state = StreamState.skipping_blanks
     elif cc == CatCode.end_of_line:
@@ -199,12 +200,12 @@ def control_sequence(bstream):
 
     return name
 
-def drop_line(bstream):
+def drop_line(bstream, catcode_table):
     while True:
         c = next(bstream)
         if c == None:
             break
-        if defaulttable[c] == CatCode.end_of_line:
+        if catcode_table[c] == CatCode.end_of_line:
             break
 
     bstream.state = StreamState.new_line
@@ -216,25 +217,25 @@ class StreamState(Enum):
     new_line        = 1
     skipping_blanks = 2
 
-def nexttoken(bstream):
+def nexttoken(bstream, catcode_table):
     c = peak(bstream, None)
     if c != None:
-        cc = defaulttable[c]
+        cc = catcode_table[c]
 
         if cc == CatCode.escape:
-            return ControlSequence(control_sequence(bstream))
+            return ControlSequence(control_sequence(bstream, catcode_table))
         elif cc == CatCode.space:
             next(bstream)
             if bstream.state == StreamState.new_line:
-                return nexttoken(bstream)
+                return nexttoken(bstream, catcode_table)
             elif bstream.state == StreamState.skipping_blanks:
-                return nexttoken(bstream)
+                return nexttoken(bstream, catcode_table)
             else:
                 bstream.state = StreamState.skipping_blanks
                 return TokenCode(' ', CatCode.space)
         elif cc == CatCode.ignored:
             next(bstream)
-            return nexttoken(bstream)
+            return nexttoken(bstream, catcode_table)
         elif cc == CatCode.end_of_line:
             next(bstream)
             if bstream.state == StreamState.new_line:
@@ -243,10 +244,10 @@ def nexttoken(bstream):
             elif bstream.state == StreamState.middle:
                 bstream.state = StreamState.skipping_blanks
                 return TokenCode(' ', CatCode.space)
-            return nexttoken(bstream)
+            return nexttoken(bstream, catcode_table)
         elif cc == CatCode.comment:
             drop_line(bstream)
-            return nexttoken(bstream)
+            return nexttoken(bstream, catcode_table)
         else:
             next(bstream)
             bstream.state = StreamState.middle
@@ -255,16 +256,13 @@ def nexttoken(bstream):
     return None
 
 
-def tokenstream(bstream, state=StreamState.new_line):
+def tokenstream(bstream, state=StreamState.new_line, catcode_table=defaultcatcode_table):
     bstream.state = state
     while True:
-        t = nexttoken(bstream)
+        t = nexttoken(bstream, catcode_table)
         if t == None:
             break
         yield t
-
-
-userdefinedmacros = {}
 
 
 class TeXException(Exception):
@@ -438,13 +436,12 @@ def apply_macro(macro,stream):
     return expand_params(body, matches)
 
 
+
 defaultbuiltinmacros = {
         'def' : handle_def
         }
 
-def expand(tokenstream, builtinmacros=defaultbuiltinmacros):
-    usermacros = {}
-
+def expand(tokenstream, builtinmacros=defaultbuiltinmacros, usermacros={}):
     while True:
         t = next(tokenstream, None)
         if t == None:
@@ -462,17 +459,4 @@ def expand(tokenstream, builtinmacros=defaultbuiltinmacros):
         else:
             yield t
 
-
-def main():
-   expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
-
-   print ("Expansion:")
-   print (list(expansion))
-   print ()
-   print ("User defined macros:")
-   print (userdefinedmacros)
-
-
-if __name__ == '__main__':
-    main ()
 

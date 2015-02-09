@@ -69,24 +69,25 @@ class TestTeX(unittest.TestCase):
 
 
     def test_control_sequence(self):
+        t = defaultcatcode_table
         s = iter('\macro')
-        r = control_sequence(resetable(s))
+        r = control_sequence(resetable(s), t)
         self.assertEqual('macro',r)
 
         with self.assertRaises(TeXException):
-            control_sequence(resetable(iter('macro')))
+            control_sequence(resetable(iter('macro')), t)
 
         with self.assertRaises(TeXException):
-            control_sequence(resetable(iter('\\')))
+            control_sequence(resetable(iter('\\')), t)
 
-        r = control_sequence(resetable(iter('\=')))
+        r = control_sequence(resetable(iter('\=')), t)
         self.assertEqual('=',r)
 
-        r = control_sequence(resetable(iter('\~')))
+        r = control_sequence(resetable(iter('\~')), t)
         self.assertEqual('~',r)
 
         # TODO: need to check what TeX does in this case
-        r = control_sequence(resetable(iter("\\\n")))
+        r = control_sequence(resetable(iter("\\\n")), t)
         self.assertEqual('',r)
 
     def test_tokenizer_text(self):
@@ -281,6 +282,7 @@ class TestTeX(unittest.TestCase):
         s = resetable(self.tok('\def\macro#1{#1 #1}\\unknownmacro{\macro{Hello}}'))
         b = expand(s)
         self.assertEqual(list(b), list(self.tok('\\unknownmacro{Hello Hello}')))
+
 
 if __name__ == '__main__':
     unittest.main()
