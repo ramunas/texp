@@ -62,12 +62,41 @@ class TestTeX(unittest.TestCase):
         self.assertFalse (match_prefix(iter([4,2,3]), rs))
         self.assertEqual([1,2,3,4], list(rs))
 
+
+    def test_control_sequence(self):
+        s = iter('\macro')
+        r = control_sequence(resetable(s))
+        self.assertEqual('macro',r)
+
+        with self.assertRaises(TeXException):
+            control_sequence(resetable(iter('macro')))
+
+        with self.assertRaises(TeXException):
+            control_sequence(resetable(iter('\\')))
+
+        r = control_sequence(resetable(iter('\=')))
+        self.assertEqual('=',r)
+
+        r = control_sequence(resetable(iter('\~')))
+        self.assertEqual('~',r)
+
+        # TODO: need to check what TeX does in this case
+        r = control_sequence(resetable(iter("\\\n")))
+        self.assertEqual('',r)
+
     def test_tokenizer_text(self):
         text = 'text'
         s = resetable(iter(text))
         e = [ TokenCode(x, CatCode.letter) for x in iter(text) ]
         t = list(tokenstream(s))
         self.assertEqual(t, e)
+
+        s = resetable(self.tok('\macro'))
+        self.assertEqual(list(s), [ControlSequence('macro')])
+
+        s = resetable(self.tok('\par'))
+        self.assertEqual(list(s), [ControlSequence('par')])
+
 
     def test_tokenizer_macro(self):
         text = '\macro  x'
@@ -150,10 +179,61 @@ class TestTeX(unittest.TestCase):
         with self.assertRaises(TeXException):
             (n,p,b) = read_def(s)
 
-    def test_match_macro_pattern(self):
-        pass
+    def test_match_macro_patter(self):
+        pattern = read_params(resetable(self.tok('x{')))
+        tokens = self.tok('x')
+        res = match_macro_pattern(pattern,tokens)
+        self.assertEqual(list(res), [])
 
+        pattern = read_params(resetable(self.tok('x{')))
+        tokens = self.tok('y')
+        with self.assertRaises(TeXMatchError):
+            res = match_macro_pattern(pattern,tokens)
 
+        pattern = read_params(resetable(self.tok('#1{')))
+        tokens = self.tok('x')
+        res = match_macro_pattern(pattern,tokens)
+        self.assertEqual(list(res), [list(self.tok('x'))])
+
+        pattern = read_params(resetable(self.tok('#1{')))
+        tokens = self.tok('{x}')
+        res = match_macro_pattern(pattern,tokens)
+        self.assertEqual(list(res), [list(self.tok('x'))])
+
+        pattern = read_params(resetable(self.tok('#1 delimiter {')))
+        tokens = self.tok(' match result delimiter ')
+        res = match_macro_pattern(pattern,tokens)
+        self.assertEqual(list(res), [list(self.tok(' match result'))])
+
+        pattern = read_params(resetable(self.tok('#1 delimiter {')))
+        tokens = self.tok(' match {result delimiter ')
+        res = match_macro_pattern(pattern,tokens)
+        self.assertEqual(list(res), [list(self.tok(' match {result'))])
+
+        pattern = read_params(resetable(self.tok('#1#2{')))
+        tokens = self.tok('xy')
+        res = match_macro_pattern(pattern,tokens)
+        self.assertEqual(list(res), [list(self.tok('x')), list(self.tok('y'))])
+
+        pattern = read_params(resetable(self.tok('p#1d{')))
+        tokens = self.tok('p{he{ll}o}dxd2 some text \par')
+        res = match_macro_pattern(pattern,tokens)
+        self.assertEqual(list(res), [list(self.tok('{he{ll}o}'))])
+
+        pattern = read_params(resetable(self.tok('p#1d#2d2{')))
+        tokens = self.tok('p{he{ll}o}dxd2 some text \par')
+        res = match_macro_pattern(pattern,tokens)
+        self.assertEqual(list(res),
+                [list(self.tok('{he{ll}o}')),
+                 list(self.tok('x')) ])
+
+        pattern = read_params(resetable(self.tok('p#1d#2d2#3\par{')))
+        tokens = self.tok('p{he{ll}o}dxd2 some text \par')
+        # res = match_macro_pattern(pattern,tokens)
+        # self.assertEqual(list(res),
+        #         [list(self.tok('he{ll}o')),
+        #          list(self.tok('x')),
+        #          list(self.tok(' some text '))])
 
 if __name__ == '__main__':
     unittest.main()

@@ -181,15 +181,28 @@ def is_paramtoken(t):
 
 def control_sequence(bstream):
     name = ''
-    next(bstream)
+
+    n = next(bstream,None)
+    if n == None:
+        raise TeXException("End of file unexpected while parsing a control sequence")
+
+    if defaulttable[n] != CatCode.escape:
+        raise TeXException("Escape char expected")
+
+    n = peak(bstream,None)
+    if n == None:
+        raise TeXException("End of file unexpected while parsing a control sequence")
+
     cc = defaulttable[peak(bstream)]
     if cc == CatCode.letter:
-        while defaulttable[peak(bstream)] == CatCode.letter:
+        while peak(bstream,None) != None and defaulttable[peak(bstream)] == CatCode.letter:
             name = name + next(bstream)
         bstream.state = StreamState.skipping_blanks
     elif cc == CatCode.end_of_line:
         next(bstream)
         bstream.state = StreamState.middle
+    elif cc == None:
+        raise TeXException("End of file was not expected while reading a control sequence")
     else:
         name = next(bstream)
         bstream.state = StreamState.skipping_blanks
@@ -336,6 +349,7 @@ def read_def(tokenstream):
     return (cname, params, body)
 
 
+# TODO: rewrite handle_def in terms of read_def
 def handle_def (tokenstream):
     args = []
     curr_arg = []
@@ -422,6 +436,9 @@ def match_prefix(pref, resetable_stream):
                 return False
     return True
 
+def consume_prefix(pref, tokenstream):
+    for i in pref:
+        next(tokenstream)
 
 def match_macro_pattern(pattern, tokenstream):
     tokens = pattern[0]
@@ -441,6 +458,7 @@ def match_macro_pattern(pattern, tokenstream):
             try:
                 while True:
                     if match_prefix(tokens, ts):
+                        consume_prefix(tokens, ts)
                         matches.append(m)
                         m = []
                         break
