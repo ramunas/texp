@@ -182,6 +182,13 @@ class TestTeX(unittest.TestCase):
         with self.assertRaises(TeXException):
             (n,p,b) = read_def(s)
 
+    def test_handle_def(self):
+        s = resetable(self.tok('\macro#1{#1}'))
+        m = {}
+        handle_def(s,m)
+        self.assertEqual(m['macro'], ([[],[]], list(self.tok('#1'))))
+
+
     def test_match_macro_patter(self):
         pattern = read_params(resetable(self.tok('x{')))
         tokens = self.tok('x')
@@ -256,6 +263,8 @@ class TestTeX(unittest.TestCase):
         par = [list(x) for x in par]
         res = expand_params(body, par)
         self.assertEqual(res, list(self.tok('{a} \z{ac}a')))
+
+
 
 if __name__ == '__main__':
     unittest.main()

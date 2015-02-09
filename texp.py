@@ -339,52 +339,9 @@ def read_def(tokenstream):
     return (cname, params, body)
 
 
-# TODO: rewrite handle_def in terms of read_def
-def handle_def (tokenstream):
-    args = []
-    curr_arg = []
-    body = []
-    arg_nr = 1
-    name = next(tokenstream)
-    if not(is_controlsequence(name)):
-        raise TeXException ("Invalid name for a macro %s" % name)
-    while True:
-        c = next(tokenstream)
-        if is_controlsequence(c):
-            curr_arg.append(c)
-        elif is_tokencode(c):
-            if c.catcode == CatCode.param:
-                n = next(tokenstream)
-                if n.tok != str(arg_nr):
-                    raise TeXException ("Arguments need to be sequential")
-                args.append(curr_arg)
-                arg_nr = arg_nr + 1
-                curr_arg = []
-            elif c.catcode == CatCode.begin_group:
-                args.append(curr_arg)
-                n = 1
-                while True:
-                    c = next(tokenstream, None)
-                    if c == None:
-                        raise TeXException("End of file unexpected while handling def")
-                    if is_tokencode(c):
-                        if c.catcode == CatCode.begin_group:
-                            n = n + 1
-                        elif c.catcode == CatCode.end_group:
-                            n = n - 1
-                        elif c.catcode == CatCode.param:
-                            p = next(tokenstream)
-                            c = ParamToken(int(p.tok))
-                    if n == 0:
-                        break
-                    body.append(c)
-                break
-            else:
-                curr_arg.append(c)
-        elif c == None:
-            raise TeXException("End of file unexpected while handling def")
-
-    userdefinedmacros[name.name] = (args,body)
+def handle_def (tokenstream, userdefinedmacros):
+    (cname,params,body) = read_def(tokenstream)
+    userdefinedmacros[cname.name] = (params,body)
 
 
 class TeXMatchError(Exception):
