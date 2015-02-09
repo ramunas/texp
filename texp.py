@@ -265,8 +265,8 @@ def nexttoken(bstream):
     return None
 
 
-def tokenstream(bstream):
-    bstream.state = StreamState.new_line
+def tokenstream(bstream, state=StreamState.new_line):
+    bstream.state = state
     while True:
         t = nexttoken(bstream)
         if t == None:

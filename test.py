@@ -43,6 +43,12 @@ class TestResetableStream(unittest.TestCase):
 
 class TestTeX(unittest.TestCase):
 
+    def tok(self,s):
+        return tokenstream(resetable(iter(s)))
+
+    def tok_exact(self,s):
+        return tokenstream(resetable(iter(s)), state=StreamState.middle)
+
     def setUp(self):
         # called each time a test is run
         pass
@@ -127,8 +133,6 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(res, list(group))
 
 
-    def tok(self,s):
-        return tokenstream(resetable(iter(s)))
 
     def test_read_params(self):
         s = resetable(self.tok('#1{'))
@@ -229,11 +233,13 @@ class TestTeX(unittest.TestCase):
 
         pattern = read_params(resetable(self.tok('p#1d#2d2#3\par{')))
         tokens = self.tok('p{he{ll}o}dxd2 some text \par')
-        # res = match_macro_pattern(pattern,tokens)
-        # self.assertEqual(list(res),
-        #         [list(self.tok('he{ll}o')),
-        #          list(self.tok('x')),
-        #          list(self.tok(' some text '))])
+        res = match_macro_pattern(pattern,tokens)
+        self.assertEqual(
+                list(res),
+                [list(self.tok('{he{ll}o}')),
+                 list(self.tok('x')),
+                 list(self.tok_exact(' some text '))])
+
 
 if __name__ == '__main__':
     unittest.main()
