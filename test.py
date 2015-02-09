@@ -265,6 +265,19 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(res, list(self.tok('{a} \z{ac}a')))
 
 
+    def test_expand(self):
+        s = resetable(self.tok('\def\macro#1{#1 #1}'))
+        b = expand(s)
+        self.assertEqual(list(b), list(self.tok('')))
+
+        s = resetable(self.tok('\def\macro#1{#1 #1}\macro{Hello}'))
+        b = expand(s)
+        self.assertEqual(list(b), list(self.tok('Hello Hello')))
+
+        s = resetable(self.tok('\def\macro#1{#1 #1}\\unknownmacro{Hello}'))
+        b = expand(s)
+        self.assertEqual(list(b), list(self.tok('\\unknownmacro{Hello}')))
+
 
 if __name__ == '__main__':
     unittest.main()

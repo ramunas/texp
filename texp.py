@@ -435,36 +435,33 @@ def expand_params(body, args):
 def apply_macro(macro,stream):
     (pattern,body) = macro
     matches = match_macro_pattern(pattern,stream)
-    return expand_macro_body(body, matches)
+    return expand_params(body, matches)
 
 
-builtinmacros = {
+defaultbuiltinmacros = {
         'def' : handle_def
         }
 
-def expand(tokenstream):
-    tstream = tokenstream
+def expand(tokenstream, builtinmacros=defaultbuiltinmacros):
+    usermacros = {}
+
     while True:
-        t = next(tstream, None)
+        t = next(tokenstream, None)
         if t == None:
             break
         if is_controlsequence(t):
             if t.name in builtinmacros:
                 m = builtinmacros[t.name]
-                m(tstream)
-            elif t.name in userdefinedmacros:
-                m = userdefinedmacros[t.name]
-                exp = apply_macro(m, tstream)
-                tstream = itertools.chain(iter(exp),tstream)
+                m(tokenstream, usermacros)
+            elif t.name in usermacros:
+                m = usermacros[t.name]
+                exp = apply_macro(m, tokenstream)
+                tokenstream = itertools.chain(iter(exp), tokenstream)
             else:
-                # pass through the unknown control sequences
                 yield t
-                # raise TeXMatchError("Undefined macro '%s'" % t.name)
         else:
             yield t
 
-
-# expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
 
 def main():
    expansion = expand(tokenstream(peakable(bytestream('test2.tex'))))
