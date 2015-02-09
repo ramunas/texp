@@ -278,6 +278,9 @@ class TestTeX(unittest.TestCase):
         b = expand(s)
         self.assertEqual(list(b), list(self.tok('\\unknownmacro{Hello}')))
 
+        s = resetable(self.tok('\def\macro#1{#1 #1}\\unknownmacro{\macro{Hello}}'))
+        b = expand(s)
+        self.assertEqual(list(b), list(self.tok('\\unknownmacro{Hello Hello}')))
 
 if __name__ == '__main__':
     unittest.main()
