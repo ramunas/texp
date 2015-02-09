@@ -239,6 +239,23 @@ class TestTeX(unittest.TestCase):
                  list(self.tok('x')),
                  list(self.tok_exact(' some text '))])
 
+    def test_expand_params(self):
+        body = list(self.tok('#1'))
+        par = list(self.tok('param'))
+        res = expand_params(body, [par])
+        self.assertEqual(res, list(self.tok('param')))
+
+        with self.assertRaises(TeXException):
+            body = list(self.tok('#'))
+            par = list(self.tok('param'))
+            res = expand_params(body, [par])
+
+        body = list(self.tok('{#1} \z{#1#3}#1'))
+        par = [self.tok('a'), self.tok('b'),
+               self.tok('c'), self.tok('d')]
+        par = [list(x) for x in par]
+        res = expand_params(body, par)
+        self.assertEqual(res, list(self.tok('{a} \z{ac}a')))
 
 if __name__ == '__main__':
     unittest.main()

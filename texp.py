@@ -459,13 +459,20 @@ def match_macro_pattern(pattern, tokenstream):
     return matches
 
 
-def expand_macro_body(body, args):
-    for i in body:
-        if is_paramtoken(i):
-            for x in args[i.number - 1]:
-                yield x
+# body and args should be lists of tokens
+def expand_params(body, args):
+    expanded = []
+    b = iter(body)
+    for i in b:
+        if has_catcode(i, CatCode.param):
+            n = next(b, None)
+            if n == None:
+                raise TeXException("Malformed body, the body ended with a pram token without the correspoding number")
+            for x in args[int(n.tok) - 1]:
+                expanded.append(x)
         else:
-            yield i
+            expanded.append(i)
+    return expanded
 
 
 def apply_macro(macro,stream):
