@@ -162,21 +162,11 @@ class TokenCode(Token):
         return ('"%s" %s' % (self.tok, self.catcode.name))
 
 
-class ParamToken(Token):
-    def __init__(self,n):
-        self.number = n
-    def __repr__(self):
-        return "#%d" % self.number
-
-
 def is_controlsequence(t):
     return t.__class__ == ControlSequence
 
 def is_tokencode(t):
     return t.__class__ == TokenCode
-
-def is_paramtoken(t):
-    return t.__class__ == ParamToken
 
 
 def control_sequence(bstream):

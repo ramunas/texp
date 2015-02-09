@@ -56,7 +56,6 @@ class TestTeX(unittest.TestCase):
     def test_identitity_cs(self):
         self.assertEqual(ControlSequence("x"), ControlSequence("x"))
         self.assertEqual(TokenCode('a', CatCode.letter), TokenCode('a', CatCode.letter))
-        self.assertEqual(ParamToken(1), ParamToken(1))
 
     def test_match_prefix(self):
         rs = resetable(iter([1,2,3,4]))
