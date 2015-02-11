@@ -338,7 +338,10 @@ def find_params(tokenstream):
             yield next(tokenstream)
 
 def find_highest_param(tokenstream):
-    return max ([int(x.tok) for x in find_params(tokenstream)])
+    params = [int(x.tok) for x in find_params(tokenstream)]
+    if len(params) == 0:
+        return None
+    return max (params)
 
 
 def read_def(tokenstream):
@@ -348,6 +351,10 @@ def read_def(tokenstream):
     params = read_params(tokenstream)
     body = read_body(tokenstream)
     h = find_highest_param(iter(body))
+    if h == 0:
+        raise TeXException("0 cannot be a parameter")
+    if h == None:
+        h = 0
     if h > len(list(params)) - 1:
         raise TeXException("Body has undefined parameters")
     return (cname, params, body)

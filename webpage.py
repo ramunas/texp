@@ -3,14 +3,13 @@
 from texp import *
 
 
-
 class new_page(object):
     counter = 0
 
     def __init__(self, name=None):
         self.name = name
         if name == None:
-            genname = 'page%d.html' % new_page.counter 
+            genname = 'page%d.html' % new_page.counter
             new_page.counter = new_page.counter + 1
             self.fd = open(genname,'w')
         else:
@@ -37,6 +36,13 @@ def process(stream, page, top=False):
                 page.send('</%s>' % name)
             elif i.name == 'par':
                 page.send("\n\n")
+            elif i.name == 'newnamedpage':
+                name = tokenstream_to_str(next_token_or_group(stream))
+                if top == True:
+                    page.close()
+                    page = new_page(name)
+                else:
+                    raise Exception("\\newnamedpage can only be used at the top level.")
             elif i.name == 'newpage':
                 if top == True:
                     page.close()
@@ -47,7 +53,7 @@ def process(stream, page, top=False):
             page.send(i.tok)
 
 def main():
-    s = expand(tokenstream(resetable(bytestream('main.tex'))))
+    s = expand(resetable(tokenstream(resetable(bytestream('main.tex')))))
     process(s, new_page('index.html'), True)
 
 
