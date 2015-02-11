@@ -256,7 +256,7 @@ def nexttoken(bstream, catcode_table):
                 return TokenCode(' ', CatCode.space)
             return nexttoken(bstream, catcode_table)
         elif cc == CatCode.comment:
-            drop_line(bstream)
+            drop_line(bstream, catcode_table)
             return nexttoken(bstream, catcode_table)
         else:
             next(bstream)
