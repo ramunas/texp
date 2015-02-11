@@ -292,7 +292,13 @@ def read_params(tokenstream):
             t = next(tokenstream)
             n = next(tokenstream)
             if is_tokencode(n):
-                if int(n.tok) != arg_nr:
+                try:
+                    i = int(n.tok)
+                except ValueError:
+                    raise TeXException("Invalid argument char '%s'" % n.tok)
+                if i == 0:
+                    raise TeXException("Parameter cannot be 0")
+                if i != arg_nr:
                     raise TeXException("Arguments need to be sequential")
                 args.append(curr_arg)
                 arg_nr = arg_nr + 1

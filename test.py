@@ -146,6 +146,10 @@ class TestTeX(unittest.TestCase):
 
 
     def test_read_params(self):
+        s = resetable(self.tok('{'))
+        args = read_params(s)
+        self.assertEqual([[]], args)
+
         s = resetable(self.tok('#1{'))
         args = read_params(s)
         self.assertEqual([[],[]], args)
@@ -159,6 +163,14 @@ class TestTeX(unittest.TestCase):
         self.assertEqual([[],[],[]], args)
 
         s = resetable(self.tok('#1#3{'))
+        with self.assertRaises(TeXException):
+            args = read_params(s)
+
+        s = resetable(self.tok('#a{'))
+        with self.assertRaises(TeXException):
+            args = read_params(s)
+
+        s = resetable(self.tok('#0{'))
         with self.assertRaises(TeXException):
             args = read_params(s)
 
