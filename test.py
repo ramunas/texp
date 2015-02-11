@@ -133,6 +133,10 @@ class TestTeX(unittest.TestCase):
             group = next_group(s)
 
     def test_next_token_or_group(self):
+        s = tokenstream(resetable(iter('')))
+        with self.assertRaises(StopIteration):
+            list(next_token_or_group(s))
+
         s = tokenstream(resetable(iter('{group}')))
         group = next_token_or_group(s)
         res = list(tokenstream(resetable(iter('group'))))
