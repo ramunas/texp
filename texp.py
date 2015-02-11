@@ -169,6 +169,16 @@ def is_controlsequence(t):
 def is_tokencode(t):
     return t.__class__ == TokenCode
 
+def tokenstream_to_str(tokenstream):
+    r = ''
+    for x in tokenstream:
+        if is_tokencode(x):
+            r = r + x.tok
+        else:
+            raise TeXException('Cannot convert the control sequence "%s" to a string' % x.name)
+    return r
+
+
 
 def control_sequence(bstream, catcode_table):
     name = ''

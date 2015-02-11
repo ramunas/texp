@@ -43,15 +43,26 @@ class TestResetableStream(unittest.TestCase):
 
 class TestTeX(unittest.TestCase):
 
+    def setUp(self):
+        # called each time a test is run
+        pass
+
     def tok(self,s):
         return tokenstream(resetable(iter(s)))
 
     def tok_exact(self,s):
         return tokenstream(resetable(iter(s)), state=StreamState.middle)
 
-    def setUp(self):
-        # called each time a test is run
-        pass
+    def test_tokenstream_to_str(self):
+        x = self.tok('hello')
+        self.assertEqual(tokenstream_to_str(x), 'hello')
+
+        x = self.tok('')
+        self.assertEqual(tokenstream_to_str(x), '')
+
+        with self.assertRaises(TeXException):
+            tokenstream_to_str(self.tok('\hello'))
+
 
     def test_identitity_cs(self):
         self.assertEqual(ControlSequence("x"), ControlSequence("x"))
