@@ -22,16 +22,46 @@ class new_page(object):
         self.fd.close()
 
 
+def split_attrs(stream):
+    attrs = []
+    try:
+        while True:
+            x = next_token_or_group(stream)
+            attrs.append(x)
+    except StopIteration:
+        pass
+
+    r = []
+    t = []
+    for i in attrs:
+        t.append(i)
+        if len(t) == 2:
+            r.append(t)
+            t = []
+
+    if len(t) != 0:
+        t.append([])
+        r.append(t)
+
+    return r
+
+
+
 def process(stream, page, top=False):
     for i in stream:
         if is_controlsequence(i):
-            # tag{name}{attr=val,...}{content}
+            # tag{name}{{attrname}{val}...}{content}
             if i.name == 'tag':
                 name = tokenstream_to_str(next_token_or_group(stream))
-                attributes = tokenstream_to_str(next_token_or_group(stream))
+                attributes = next_token_or_group(stream)
+                attrs = split_attrs(iter(attributes))
                 content = next_token_or_group(stream)
 
-                page.send('<%s>' % name)
+                attrstring = ''
+                for i in attrs:
+                    attrstring = attrstring + (' %s="%s"' % (tokenstream_to_str(iter(i[0])), tokenstream_to_str(iter(i[1]))))
+
+                page.send('<%s%s>' % (name, attrstring))
                 process(content, page)
                 page.send('</%s>' % name)
             elif i.name == 'par':
