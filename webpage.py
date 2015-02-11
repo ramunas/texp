@@ -62,7 +62,7 @@ def process(stream, page, top=False):
                     attrstring = attrstring + (' %s="%s"' % (tokenstream_to_str(iter(i[0])), tokenstream_to_str(iter(i[1]))))
 
                 page.send('<%s%s>' % (name, attrstring))
-                process(content, page)
+                process(iter(content), page)
                 page.send('</%s>' % name)
             elif i.name == 'par':
                 page.send("\n\n")
@@ -81,6 +81,7 @@ def process(stream, page, top=False):
                     raise Exception("\\newpage can only be used at the top level.")
         else:
             page.send(i.tok)
+
 
 def main():
     s = expand(resetable(tokenstream(resetable(bytestream('main.tex')))))
