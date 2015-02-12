@@ -252,9 +252,10 @@ def nexttoken(bstream, catcode_table):
                 bstream.state = StreamState.skipping_blanks
                 return ControlSequence('par')
             elif bstream.state == StreamState.middle:
-                bstream.state = StreamState.skipping_blanks
+                bstream.state = StreamState.new_line
                 return TokenCode(' ', CatCode.space)
-            return nexttoken(bstream, catcode_table)
+            elif bstream.state == StreamState.skipping_blanks:
+                return nexttoken(bstream, catcode_table)
         elif cc == CatCode.comment:
             drop_line(bstream, catcode_table)
             return nexttoken(bstream, catcode_table)

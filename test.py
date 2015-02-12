@@ -97,7 +97,6 @@ class TestTeX(unittest.TestCase):
         r = control_sequence(resetable(iter('\~')), t)
         self.assertEqual('~',r)
 
-        # TODO: need to check what TeX does in this case
         r = control_sequence(resetable(iter("\\\n")), t)
         self.assertEqual('',r)
 
