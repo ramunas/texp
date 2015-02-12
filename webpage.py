@@ -47,22 +47,32 @@ def split_attrs(stream):
 
 
 
+def tag(stream):
+    name = tokenstream_to_str(next_token_or_group(stream))
+    attributes = next_token_or_group(stream)
+    attrs = split_attrs(iter(attributes))
+
+    attrstring = ''
+    for i in attrs:
+        attrstring = attrstring + (' %s="%s"' % (tokenstream_to_str(iter(i[0])), tokenstream_to_str(iter(i[1]))))
+    return (name, attrstring)
+
 def process(stream, page, top=False):
     for i in stream:
         if is_controlsequence(i):
             # tag{name}{{attrname}{val}...}{content}
             if i.name == 'tag':
-                name = tokenstream_to_str(next_token_or_group(stream))
-                attributes = next_token_or_group(stream)
-                attrs = split_attrs(iter(attributes))
+                (name, attrstring) = tag(stream)
                 content = next_token_or_group(stream)
-
-                attrstring = ''
-                for i in attrs:
-                    attrstring = attrstring + (' %s="%s"' % (tokenstream_to_str(iter(i[0])), tokenstream_to_str(iter(i[1]))))
 
                 page.send('<%s%s>' % (name, attrstring))
                 process(iter(content), page)
+                page.send('</%s>' % name)
+            elif i.name == 'opentag':
+                (name, attrstring) = tag(stream)
+                page.send('<%s%s>' % (name, attrstring))
+            elif i.name == 'closetag':
+                name = tokenstream_to_str(next_token_or_group(stream))
                 page.send('</%s>' % name)
             elif i.name == 'par':
                 page.send("\n\n")
