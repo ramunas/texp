@@ -89,6 +89,8 @@ def process(stream, page, top=False):
                     page = new_page()
                 else:
                     raise Exception("\\newpage can only be used at the top level.")
+            else:
+                raise Exception("Undefined macro %s" % i.name)
         else:
             page.send(i.tok)
 
