@@ -15,6 +15,8 @@ class new_page(object):
         else:
             self.fd = open(name,'w')
 
+        self.send("<!DOCTYPE html>")
+
     def send(self,s):
         self.fd.write(s)
 
