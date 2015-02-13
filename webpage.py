@@ -68,7 +68,7 @@ def process(stream, page, top=False):
                 content = next_token_or_group(stream)
 
                 page.send('<%s%s>' % (name, attrstring))
-                process(iter(content), page)
+                process(resetable(iter(content)), page)
                 page.send('</%s>' % name)
             elif i.name == 'opentag':
                 (name, attrstring) = tag(stream)

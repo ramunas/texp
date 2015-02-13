@@ -80,6 +80,12 @@ def peak(stream, *d):
         raise TypeError ("peak expected at most 2 arguments, got %d" % len(d))
 
 
+def is_peakable(t):
+    return hasattr(t, '__peak__')
+
+def is_resetable(t):
+    return hasattr(t, '__reset__')
+
 
 # 0 = Escape character, normally \
 # 1 = Begin grouping, normally {
@@ -284,6 +290,8 @@ def has_catcode(t, catcode):
 
 
 def read_params(tokenstream):
+    assert is_peakable(tokenstream)
+
     arg_nr = 1
     curr_arg = []
     args = []
@@ -346,6 +354,8 @@ def find_highest_param(tokenstream):
 
 
 def read_def(tokenstream):
+    assert is_peakable(tokenstream)
+
     cname = next(tokenstream)
     if not(is_controlsequence(cname)):
         raise TeXException("Control sequence expected")
@@ -362,6 +372,7 @@ def read_def(tokenstream):
 
 
 def handle_def (tokenstream, userdefinedmacros):
+    assert is_peakable(tokenstream)
     (cname,params,body) = read_def(tokenstream)
     userdefinedmacros[cname.name] = (params,body)
 
@@ -466,6 +477,9 @@ defaultbuiltinmacros = {
         }
 
 def expand(tokenstream, builtinmacros=defaultbuiltinmacros, usermacros={}):
+    assert is_resetable(tokenstream)
+    assert is_peakable(tokenstream)
+
     while True:
         t = next(tokenstream, None)
         if t == None:
@@ -477,7 +491,7 @@ def expand(tokenstream, builtinmacros=defaultbuiltinmacros, usermacros={}):
             elif t.name in usermacros:
                 m = usermacros[t.name]
                 exp = apply_macro(m, tokenstream)
-                tokenstream = itertools.chain(iter(exp), tokenstream)
+                tokenstream = resetable(itertools.chain(iter(exp), tokenstream))
             else:
                 yield t
         else:
