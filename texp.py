@@ -208,8 +208,6 @@ def control_sequence(bstream, catcode_table):
     elif cc == CatCode.end_of_line:
         next(bstream)
         bstream.state = StreamState.middle
-    elif cc == None:
-        raise TeXException("End of file was not expected while reading a control sequence")
     else:
         name = next(bstream)
         bstream.state = StreamState.skipping_blanks
