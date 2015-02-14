@@ -17,24 +17,6 @@ def bytestream(file):
             break
         yield c
 
-class peakable(object):
-    def __init__(self, stream):
-        self.buf = None
-        self.stream = stream
-
-    def __peak__(self):
-        if self.buf == None:
-            self.buf = next(self.stream)
-        return self.buf
-
-    def __next__(self):
-        x = self.__peak__()
-        self.buf = None
-        return x
-
-    def __iter__(self):
-        return self
-
 class resetable(object):
     def __iter__(self): return self
 
