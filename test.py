@@ -243,7 +243,7 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(m['macro'], ([[],[]], list(self.tok('#1'))))
 
 
-    def test_match_macro_patter(self):
+    def test_match_macro_pattern(self):
         pattern = read_params(resetable(self.tok('x{')))
         tokens = self.tok('x')
         res = match_macro_pattern(pattern,tokens)
@@ -349,8 +349,19 @@ class TestTeX(unittest.TestCase):
 
         s = resetable(self.tok('\macro{\def\mac{one}\mac}'))
         b = expand(s, usermacros={})
-        # print(list(b))
         self.assertEqual(list(b), list(self.tok('\macro{one}')))
+
+        s = resetable(self.tok('\def\m#1#2{}\m'))
+        with self.assertRaises(TeXMatchError):
+            list(expand(s, usermacros={}))
+
+        s = resetable(self.tok('\def\m#1#2{#1#2}\m\m\m   '))
+        with self.assertRaises(TeXMatchError):
+            list(expand(s, usermacros={}))
+
+        s = resetable(self.tok('\def\m#1#2{#1#2}\m{\m{}{}}\m{}{}'))
+        b = expand(s, usermacros={})
+        self.assertEqual(list(b), list(self.tok('')))
 
 if __name__ == '__main__':
     unittest.main()
