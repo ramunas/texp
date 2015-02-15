@@ -300,6 +300,17 @@ class TestTeX(unittest.TestCase):
                  list(self.tok('x')),
                  list(self.tok_exact(' some text '))])
 
+        pattern = read_params(resetable(self.tok('#1{')))
+        tokens = self.tok('')
+        with self.assertRaises(TeXMatchError):
+            list(match_macro_pattern(pattern,tokens))
+
+        pattern = read_params(resetable(self.tok('#1#2#3{')))
+        tokens = self.tok_exact('ab')
+        with self.assertRaises(TeXMatchError):
+            list(match_macro_pattern(pattern,tokens))
+
+
     def test_expand_params(self):
         body = list(self.tok('#1'))
         par = list(self.tok('param'))

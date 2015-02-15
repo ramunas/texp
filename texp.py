@@ -416,7 +416,10 @@ def match_macro_pattern(pattern, tokenstream):
     ts = resetable(tokenstream)
     for tokens in pattern[1:]:
         if len(tokens) == 0: # non-delimited token
-            matches.append(next_token_or_group(ts))
+            try:
+                matches.append(next_token_or_group(ts))
+            except StopIteration:
+                raise TeXMatchError("Stream ended while matching a macro pattern")
         else: # delimited, append until match is found
             try:
                 while True:
