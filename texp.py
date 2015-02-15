@@ -36,7 +36,8 @@ class resetable(object):
         self.stream = itertools.chain(iter(s), self.stream)
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.__reset__()
+        if exc_type == None:
+            self.__reset__()
 
     def __next__(self):
         x = next(self.stream)

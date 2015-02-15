@@ -94,6 +94,14 @@ def process(stream, page, top=False):
                     page = new_page()
                 else:
                     raise Exception("\\newpage can only be used at the top level.")
+            elif i.name == 'ifempty': # this is a bit of a hack, I should add conditional macros to texp
+                t = next_token_or_group(stream)
+                thn = next_token_or_group(stream)
+                els = next_token_or_group(stream) 
+                if len(t) == 0:
+                    process(resetable(iter(thn)),page)
+                else:
+                    process(resetable(iter(els)),page)
             else:
                 raise Exception("Undefined macro %s" % i.name)
         else:
