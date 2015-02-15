@@ -73,6 +73,9 @@ def process(stream, page, top=False):
             elif i.name == 'opentag':
                 (name, attrstring) = tag(stream)
                 page.send('<%s%s>' % (name, attrstring))
+            elif i.name == 'openclosetag':
+                (name, attrstring) = tag(stream)
+                page.send('<%s%s/>' % (name, attrstring))
             elif i.name == 'closetag':
                 name = tokenstream_to_str(next_token_or_group(stream))
                 page.send('</%s>' % name)
@@ -94,7 +97,12 @@ def process(stream, page, top=False):
             else:
                 raise Exception("Undefined macro %s" % i.name)
         else:
-            page.send(i.tok)
+            if has_catcode(i, CatCode.begin_group):
+                pass
+            elif has_catcode(i, CatCode.end_group):
+                pass
+            else:
+                page.send(i.tok)
 
 
 def main():
