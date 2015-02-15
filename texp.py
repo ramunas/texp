@@ -28,8 +28,11 @@ class resetable(object):
         self.read.append([])
         return self
 
+    def __drop__(self):
+        return self.read.pop()
+
     def __reset__(self):
-        s = self.read.pop()
+        s = self.__drop__()
         self.stream = itertools.chain(iter(s), self.stream)
 
     def __exit__(self, exc_type, exc_value, traceback):
