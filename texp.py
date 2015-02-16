@@ -475,10 +475,12 @@ def expand(tokenstream, builtinmacros=defaultbuiltinmacros, usermacros={}):
             if t.name in builtinmacros:
                 m = builtinmacros[t.name]
                 m(tokenstream, usermacros)
+                # print ("Expanding %s" % t.name)
             elif t.name in usermacros:
                 m = usermacros[t.name]
                 exp = apply_macro(m, tokenstream)
                 tokenstream = resetable(itertools.chain(iter(exp), tokenstream))
+                # print ("Expanding %s" % t.name)
             else:
                 yield t
         else:

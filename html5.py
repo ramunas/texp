@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from texp import *
+import datetime
 
 
 class new_page(object):
@@ -81,6 +82,10 @@ def process(stream, page, top=False):
                 page.send('</%s>' % name)
             elif i.name == 'par':
                 page.send("\n\n")
+            elif i.name == 'htmlnewline':
+                page.send("\n\n")
+            elif i.name == 'currentdate':
+                page.send(str(datetime.datetime.now().date()))
             elif i.name == 'newnamedpage':
                 name = tokenstream_to_str(next_token_or_group(stream))
                 if top == True:
@@ -102,6 +107,12 @@ def process(stream, page, top=False):
                     process(resetable(iter(thn)),page)
                 else:
                     process(resetable(iter(els)),page)
+            elif i.name == 'includehtmlsnippet':
+                filename = tokenstream_to_str(next_token_or_group(stream))
+                f = open(filename, 'r')
+                content = f.read()
+                page.send(content)
+                f.close()
             else:
                 raise Exception("Undefined macro %s" % i.name)
         else:
@@ -114,7 +125,11 @@ def process(stream, page, top=False):
 
 
 def main():
-    s = expand(resetable(tokenstream(resetable(bytestream('main.tex')))))
+    bm = defaultbuiltinmacros
+    um = {}
+    um['%'] = ([[]], [TokenCode('%', CatCode.other)])
+    um['#'] = ([[]], [TokenCode('#', CatCode.other)])
+    s = expand(resetable(tokenstream(resetable(bytestream('main.tex')))), bm, um)
     process(s, new_page('index.html'), True)
 
 
