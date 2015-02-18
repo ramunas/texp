@@ -71,40 +71,23 @@ def is_peakable(t):
 def is_resetable(t):
     return hasattr(t, '__reset__')
 
-
-# 0 = Escape character, normally \
-# 1 = Begin grouping, normally {
-# 2 = End grouping, normally }
-# 3 = Math shift, normally $
-# 4 = Alignment tab, normally &
-# 5 = End of line, normally <return>
-# 6 = Parameter, normally #
-# 7 = Superscript, normally ^
-# 8 = Subscript, normally _
-# 9 = Ignored character, normally <null>
-# 10 = Space, normally <space> and <tab>
-# 11 = Letter, normally only contains the letters a,...,z and A,...,Z. These characters can be used in command names
-# 12 = Other, normally everything else not listed in the other categories
-# 13 = Active character, for example ~
-# 14 = Comment character, normally %
-# 15 = Invalid character, normally <delete>
 class CatCode:
-    escape      = 0
-    begin_group = 1
-    end_group   = 2
-    math_shift  = 3
-    align_tab   = 4
-    end_of_line = 5
-    param       = 6
-    superscript = 7
-    subscript   = 8
-    ignored     = 9
-    space       = 10
-    letter      = 11
-    other       = 12
-    active      = 13
-    comment     = 14
-    invalid     = 15
+    escape      = 0   # Escape character, normally '\'
+    begin_group = 1   # Begin grouping, normally {
+    end_group   = 2   # End grouping, normally }
+    math_shift  = 3   # Math shift, normally $                                                                                        
+    align_tab   = 4   # Alignment tab, normally &                                                                                     
+    end_of_line = 5   # End of line, normally <return>                                                                                
+    param       = 6   # Parameter, normally #                                                                                         
+    superscript = 7   # Superscript, normally ^                                                                                       
+    subscript   = 8   # Subscript, normally _                                                                                         
+    ignored     = 9   # Ignored character, normally <null>                                                                            
+    space       = 10  # Space, normally <space> and <tab>                                                                             
+    letter      = 11  # Letter, normally only contains the letters a,...,z and A,...,Z. These characters can be used in command names 
+    other       = 12  # Other, normally everything else not listed in the other categories                                            
+    active      = 13  # Active character, for example ~                                                                               
+    comment     = 14  # Comment character, normally %                                                                                 
+    invalid     = 15  # Invalid character, normally <delete>                                                                          
 
 
 class CharCatCodeTable(dict):
@@ -474,12 +457,12 @@ def expand(tokenstream, builtinmacros=defaultbuiltinmacros, usermacros={}):
             if t.name in builtinmacros:
                 m = builtinmacros[t.name]
                 m(tokenstream, usermacros)
-                # print ("Expanding %s" % t.name)
+                # print ("Expanding builtin '%s'" % t.name)
             elif t.name in usermacros:
                 m = usermacros[t.name]
                 exp = apply_macro(m, tokenstream)
                 tokenstream = resetable(itertools.chain(iter(exp), tokenstream))
-                # print ("Expanding %s" % t.name)
+                # print ("Expanding user '%s'" % t.name)
             else:
                 yield t
         else:
