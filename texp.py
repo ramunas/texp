@@ -1,6 +1,5 @@
 #!/usr/bin/env python3.4
 
-from enum import Enum
 import itertools
 
 
@@ -89,7 +88,7 @@ def is_resetable(t):
 # 13 = Active character, for example ~
 # 14 = Comment character, normally %
 # 15 = Invalid character, normally <delete>
-class CatCode(Enum):
+class CatCode:
     escape      = 0
     begin_group = 1
     end_group   = 2
@@ -136,23 +135,23 @@ class CharCatCodeTable(dict):
 defaultcatcode_table = CharCatCodeTable()
 
 
-class Token(StructEq):
-    pass
-
-
-class ControlSequence(Token):
+class ControlSequence:
     def __init__(self, name):
         self.name = name
     def __repr__(self):
         return '\\' + self.name
+    def __eq__(self,x):
+        return x.__class__ == ControlSequence and x.name == self.name
 
 
-class TokenCode(Token):
+class TokenCode:
     def __init__(self, t, catcode):
         self.tok = t
         self.catcode = catcode
     def __repr__(self):
         return ('"%s" %s' % (self.tok, self.catcode.name))
+    def __eq__(self,x):
+        return x.__class__ == TokenCode and x.catcode == self.catcode and x.tok == self.tok
 
 
 def is_controlsequence(t):
@@ -212,7 +211,7 @@ def drop_line(bstream, catcode_table):
 
 
 # TeXbook, p. 46
-class StreamState(Enum):
+class StreamState():
     middle          = 0
     new_line        = 1
     skipping_blanks = 2

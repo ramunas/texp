@@ -2,6 +2,7 @@
 
 from texp import *
 import datetime
+import os
 
 
 class new_page(object):
@@ -124,6 +125,7 @@ def process(stream, page, top=False):
                 page.send(i.tok)
 
 
+
 def main():
     bm = defaultbuiltinmacros
     um = {}
@@ -132,6 +134,8 @@ def main():
     s = expand(resetable(tokenstream(resetable(bytestream('main.tex')))), bm, um)
     process(s, new_page('index.html'), True)
 
+
+import cProfile
 
 if __name__ == '__main__':
     main()
