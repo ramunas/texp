@@ -211,7 +211,7 @@ def drop_line(bstream, catcode_table):
 
 
 # TeXbook, p. 46
-class StreamState():
+class StreamState:
     middle          = 0
     new_line        = 1
     skipping_blanks = 2
