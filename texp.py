@@ -75,19 +75,19 @@ class CatCode:
     escape      = 0   # Escape character, normally '\'
     begin_group = 1   # Begin grouping, normally {
     end_group   = 2   # End grouping, normally }
-    math_shift  = 3   # Math shift, normally $                                                                                        
-    align_tab   = 4   # Alignment tab, normally &                                                                                     
-    end_of_line = 5   # End of line, normally <return>                                                                                
-    param       = 6   # Parameter, normally #                                                                                         
-    superscript = 7   # Superscript, normally ^                                                                                       
-    subscript   = 8   # Subscript, normally _                                                                                         
-    ignored     = 9   # Ignored character, normally <null>                                                                            
-    space       = 10  # Space, normally <space> and <tab>                                                                             
-    letter      = 11  # Letter, normally only contains the letters a,...,z and A,...,Z. These characters can be used in command names 
-    other       = 12  # Other, normally everything else not listed in the other categories                                            
-    active      = 13  # Active character, for example ~                                                                               
-    comment     = 14  # Comment character, normally %                                                                                 
-    invalid     = 15  # Invalid character, normally <delete>                                                                          
+    math_shift  = 3   # Math shift, normally $
+    align_tab   = 4   # Alignment tab, normally &
+    end_of_line = 5   # End of line, normally <return>
+    param       = 6   # Parameter, normally #
+    superscript = 7   # Superscript, normally ^
+    subscript   = 8   # Subscript, normally _
+    ignored     = 9   # Ignored character, normally <null>
+    space       = 10  # Space, normally <space> and <tab>
+    letter      = 11  # Letter, normally only contains the letters a,...,z and A,...,Z. These characters can be used in command names
+    other       = 12  # Other, normally everything else not listed in the other categories
+    active      = 13  # Active character, for example ~
+    comment     = 14  # Comment character, normally %
+    invalid     = 15  # Invalid character, normally <delete>
 
 
 class CharCatCodeTable(dict):
