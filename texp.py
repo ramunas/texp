@@ -379,7 +379,8 @@ def next_group(tokenstream):
 
         x.append(t)
 
-    return x
+    return (tokenstream, x)
+
 
 def next_token_or_group(tokenstream):
     t = next(tokenstream)

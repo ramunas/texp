@@ -157,12 +157,12 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(t, e)
 
     def test_next_group(self):
-        s = tokenstream(resetable(iter('group}')))
-        group = next_group(s)
-        res = list(tokenstream(resetable(iter('group'))))
+        s = tokenstream(iter('group}'))
+        (s,group) = next_group(s)
+        res = list(tokenstream(iter('group')))
         self.assertEqual(res, list(group))
 
-        s = tokenstream(resetable(iter('{group}')))
+        s = tokenstream(iter('{group}'))
         with self.assertRaises(StopIteration):
             group = next_group(s)
 
