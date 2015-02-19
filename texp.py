@@ -322,7 +322,7 @@ def read_body(tokenstream):
             body.append(t)
     else:
         raise TeXException("Failed to parse body")
-    return body
+    return (tokenstream, body)
 
 
 def find_params(tokenstream):

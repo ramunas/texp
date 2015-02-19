@@ -241,7 +241,7 @@ class TestTeX(unittest.TestCase):
         t = "body #1 \\text{#2} #3"
         s1 = resetable(self.tok("{%s}" % t))
         s2 = self.tok(t)
-        b = read_body(s1)
+        (s,b) = read_body(s1)
         self.assertEqual(list(b), list(s2))
 
     def test_read_def(self):
