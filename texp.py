@@ -275,36 +275,35 @@ def has_catcode(t, catcode):
 
 
 def read_params(tokenstream):
-    assert is_peakable(tokenstream)
-
     arg_nr = 1
     curr_arg = []
     args = []
     while True:
-        t = peak(tokenstream)
+        # t = peak(tokenstream)
+        t = next(tokenstream)
         if has_catcode(t, CatCode.param):
-            t = next(tokenstream)
             n = next(tokenstream)
             if is_tokencode(n):
                 try:
                     i = int(n.tok)
                 except ValueError:
-                    raise TeXException("Invalid argument char '%s'" % n.tok)
+                    raise TeXMatchError("Invalid argument char '%s'" % n.tok)
                 if i == 0:
-                    raise TeXException("Parameter cannot be 0")
+                    raise TeXMatchError("Parameter cannot be 0")
                 if i != arg_nr:
-                    raise TeXException("Arguments need to be sequential")
+                    raise TeXMatchError("Arguments need to be sequential")
                 args.append(curr_arg)
                 arg_nr = arg_nr + 1
                 curr_arg = []
             else:
-                raise TeXException("Not an integer")
+                raise TeXMatchError("Not an integer")
         elif has_catcode(t, CatCode.begin_group):
+            tokenstream = prepend(t, tokenstream)
             args.append(curr_arg)
             break
         else:
-            curr_arg.append(next(tokenstream))
-    return args
+            curr_arg.append(t)
+    return (tokenstream, args)
 
 
 def read_body(tokenstream):

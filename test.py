@@ -182,40 +182,39 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(res, list(group))
 
 
-
     def test_read_params(self):
-        s = resetable(self.tok('{'))
+        s = self.tok('{')
         args = read_params(s)
-        self.assertEqual([[]], args)
+        self.assertEqual([[]], args[1])
 
-        s = resetable(self.tok('#1{'))
+        s = self.tok('#1{')
         args = read_params(s)
-        self.assertEqual([[],[]], args)
+        self.assertEqual([[],[]], args[1])
 
-        s = resetable(self.tok('#1delim{'))
+        s = self.tok('#1delim{')
         args = read_params(s)
-        self.assertEqual([[],list(self.tok('delim'))], args)
+        self.assertEqual([[],list(self.tok('delim'))], args[1])
 
-        s = resetable(self.tok('#1#2{'))
+        s = self.tok('#1#2{')
         args = read_params(s)
-        self.assertEqual([[],[],[]], args)
+        self.assertEqual([[],[],[]], args[1])
 
-        s = resetable(self.tok('#1#3{'))
-        with self.assertRaises(TeXException):
+        s = self.tok('#1#3{')
+        with self.assertRaises(TeXMatchError):
             args = read_params(s)
 
-        s = resetable(self.tok('#a{'))
-        with self.assertRaises(TeXException):
+        s = self.tok('#a{')
+        with self.assertRaises(TeXMatchError):
             args = read_params(s)
 
-        s = resetable(self.tok('#0{'))
-        with self.assertRaises(TeXException):
+        s = self.tok('#0{')
+        with self.assertRaises(TeXMatchError):
             args = read_params(s)
 
-        s = resetable(self.tok('pref#1delim1#2delim2{'))
+        s = self.tok('pref#1delim1#2delim2{')
         args = read_params(s)
         tk = lambda s: list(self.tok(s))
-        self.assertEqual([tk('pref'),tk('delim1'),tk('delim2')], args)
+        self.assertEqual([tk('pref'),tk('delim1'),tk('delim2')], args[1])
 
 
     def test_find_params(self):
