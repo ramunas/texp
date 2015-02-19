@@ -126,16 +126,23 @@ def process(stream, page, top=False):
 
 
 
+def read_file(file):
+    f = open(file,'r')
+    c = f.read()
+    f.close()
+    return c
+
 def main():
     bm = defaultbuiltinmacros
     um = {}
     um['%'] = ([[]], [TokenCode('%', CatCode.other)])
     um['#'] = ([[]], [TokenCode('#', CatCode.other)])
     s = expand(resetable(tokenstream(resetable(bytestream('main.tex')))), bm, um)
+    # content = iter(read_file('main.tex'))
+    # s = expand(resetable(tokenstream(resetable(content))), bm, um)
     process(s, new_page('index.html'), True)
 
 
-import cProfile
 
 if __name__ == '__main__':
     main()

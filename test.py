@@ -41,6 +41,27 @@ class TestResetableStream(unittest.TestCase):
         self.assertEqual(list(s),x)
 
 
+class TestOther(unittest.TestCase):
+    def test_copytobuf(self):
+        it = iter([1,2,3])
+        buf = []
+        s = copytobuf(buf, it)
+        for i in s:
+            pass
+        self.assertEqual([1,2,3],buf)
+
+        it = iter([1,2,3])
+        buf = []
+        s = copytobuf(buf, it)
+        next(s)
+        self.assertEqual([1],buf)
+
+        self.assertEqual(2, next(it))
+        self.assertEqual(3, next(it))
+        with self.assertRaises(StopIteration):
+            next(it)
+
+
 class TestTeX(unittest.TestCase):
 
     def setUp(self):

@@ -16,6 +16,13 @@ def bytestream(file):
             break
         yield c
 
+
+def copytobuf(buf, it):
+    while True:
+        x = next(it)
+        buf.append(x)
+        yield x
+
 class resetable(object):
     def __iter__(self): return self
 
@@ -115,7 +122,6 @@ class CharCatCodeTable(dict):
             return CatCode.other
 
 
-defaultcatcode_table = CharCatCodeTable()
 
 
 class ControlSequence:
@@ -238,6 +244,8 @@ def nexttoken(bstream, catcode_table):
 
     return None
 
+
+defaultcatcode_table = CharCatCodeTable()
 
 def tokenstream(bstream, state=StreamState.new_line, catcode_table=defaultcatcode_table):
     bstream.state = state
