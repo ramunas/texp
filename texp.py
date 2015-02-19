@@ -23,6 +23,9 @@ def copytobuf(buf, it):
         buf.append(x)
         yield x
 
+def prepend(x, it):
+    return itertools.chain(iter([x]), it)
+
 class resetable(object):
     def __iter__(self): return self
 
@@ -160,7 +163,7 @@ def tokenstream_to_str(tokenstream):
 
 
 
-def control_sequence(bstream, catcode_table):
+def control_sequence(bstream, state, catcode_table):
     name = ''
 
     n = next(bstream,None)
@@ -170,23 +173,29 @@ def control_sequence(bstream, catcode_table):
     if catcode_table[n] != CatCode.escape:
         raise TeXException("Escape char expected")
 
-    n = peak(bstream,None)
+    n = next(bstream,None)
     if n == None:
         raise TeXException("End of file unexpected while parsing a control sequence")
 
-    cc = catcode_table[peak(bstream)]
+    cc = catcode_table[n]
     if cc == CatCode.letter:
-        while peak(bstream,None) != None and catcode_table[peak(bstream)] == CatCode.letter:
-            name = name + next(bstream)
-        bstream.state = StreamState.skipping_blanks
+        name = n
+        while True:
+            char = next(bstream, None)
+            if char == None:
+                break
+            if catcode_table[char] != CatCode.letter:
+                bstream = prepend(char, bstream)
+                break
+            name = name + char
+        state = StreamState.skipping_blanks
     elif cc == CatCode.end_of_line:
-        next(bstream)
-        bstream.state = StreamState.middle
+        state = StreamState.middle
     else:
-        name = next(bstream)
-        bstream.state = StreamState.skipping_blanks
+        name = n
+        state = StreamState.skipping_blanks
 
-    return name
+    return (bstream, state, name)
 
 def drop_line(bstream, catcode_table):
     while True:

@@ -101,25 +101,26 @@ class TestTeX(unittest.TestCase):
 
 
     def test_control_sequence(self):
+        state = StreamState.middle
         t = defaultcatcode_table
         s = iter('\macro')
-        r = control_sequence(resetable(s), t)
+        (s,st,r) = control_sequence(s, state, t)
         self.assertEqual('macro',r)
 
         with self.assertRaises(TeXException):
-            control_sequence(resetable(iter('macro')), t)
+            control_sequence(iter('macro'), state, t)
 
         with self.assertRaises(TeXException):
-            control_sequence(resetable(iter('\\')), t)
+            control_sequence(iter('\\'), state, t)
 
-        r = control_sequence(resetable(iter('\=')), t)
-        self.assertEqual('=',r)
+        r = control_sequence(iter('\='), state, t)
+        self.assertEqual('=',r[2])
 
-        r = control_sequence(resetable(iter('\~')), t)
-        self.assertEqual('~',r)
+        r = control_sequence(resetable(iter('\~')), st, t)
+        self.assertEqual('~',r[2])
 
-        r = control_sequence(resetable(iter("\\\n")), t)
-        self.assertEqual('',r)
+        r = control_sequence(resetable(iter("\\\n")), st, t)
+        self.assertEqual('',r[2])
 
     def test_tokenizer_text(self):
         text = 'text'
