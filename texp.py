@@ -388,7 +388,7 @@ def next_token_or_group(tokenstream):
     if has_catcode(t, CatCode.begin_group):
         return next_group(tokenstream)
     else:
-        return [t]
+        return (tokenstream, [t])
 
 
 def match_prefix(pref, resetable_stream):

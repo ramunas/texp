@@ -167,18 +167,18 @@ class TestTeX(unittest.TestCase):
             group = next_group(s)
 
     def test_next_token_or_group(self):
-        s = tokenstream(resetable(iter('')))
+        s = tokenstream(iter(''))
         with self.assertRaises(StopIteration):
-            list(next_token_or_group(s))
+            list(next_token_or_group(s)[1])
 
-        s = tokenstream(resetable(iter('{group}')))
-        group = next_token_or_group(s)
-        res = list(tokenstream(resetable(iter('group'))))
+        s = tokenstream(iter('{group}'))
+        (s,group) = next_token_or_group(s)
+        res = list(tokenstream(iter('group')))
         self.assertEqual(res, list(group))
 
-        s = tokenstream(resetable(iter('g')))
-        group = next_token_or_group(s)
-        res = list(tokenstream(resetable(iter('g'))))
+        s = tokenstream(iter('g'))
+        (s,group) = next_token_or_group(s)
+        res = list(tokenstream(iter('g')))
         self.assertEqual(res, list(group))
 
 
