@@ -145,7 +145,8 @@ def main():
     um = {}
     um['%'] = ([[]], [TokenCode('%', CatCode.other)])
     um['#'] = ([[]], [TokenCode('#', CatCode.other)])
-    s = expand(tokenstream(bytestream('main.tex')), bm, um)
+    content = iter(read_file('main.tex'))
+    s = expand(tokenstream(content), bm, um)
     process(s, new_page('index.html'), True)
 
 
