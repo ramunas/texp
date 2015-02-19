@@ -453,8 +453,8 @@ def expand_params(body, args):
 
 def apply_macro(macro,stream):
     (pattern,body) = macro
-    matches = match_macro_pattern(pattern,stream)
-    return expand_params(body, matches)
+    (stream, matches) = match_macro_pattern(pattern,stream)
+    return (stream, expand_params(body, matches))
 
 
 
@@ -463,9 +463,6 @@ defaultbuiltinmacros = {
         }
 
 def expand(tokenstream, builtinmacros=defaultbuiltinmacros, usermacros={}):
-    assert is_resetable(tokenstream)
-    assert is_peakable(tokenstream)
-
     while True:
         t = next(tokenstream, None)
         if t == None:
@@ -473,12 +470,12 @@ def expand(tokenstream, builtinmacros=defaultbuiltinmacros, usermacros={}):
         if is_controlsequence(t):
             if t.name in builtinmacros:
                 m = builtinmacros[t.name]
-                m(tokenstream, usermacros)
+                tokenstream = m(tokenstream, usermacros)
                 # print ("Expanding builtin '%s'" % t.name)
             elif t.name in usermacros:
                 m = usermacros[t.name]
-                exp = apply_macro(m, tokenstream)
-                tokenstream = resetable(itertools.chain(iter(exp), tokenstream))
+                (tokenstream, exp) = apply_macro(m, tokenstream)
+                tokenstream = itertools.chain(iter(exp), tokenstream)
                 # print ("Expanding user '%s'" % t.name)
             else:
                 yield t
