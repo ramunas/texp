@@ -279,68 +279,68 @@ class TestTeX(unittest.TestCase):
 
 
     def test_match_macro_pattern(self):
-        pattern = read_params(resetable(self.tok('x{')))
+        (s,pattern) = read_params(self.tok('x{'))
         tokens = self.tok('x')
-        res = match_macro_pattern(pattern,tokens)
+        (s, res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [])
 
-        pattern = read_params(resetable(self.tok('x{')))
+        (s,pattern) = read_params(self.tok('x{'))
         tokens = self.tok('y')
         with self.assertRaises(TeXMatchError):
             res = match_macro_pattern(pattern,tokens)
 
-        pattern = read_params(resetable(self.tok('#1{')))
+        (s,pattern) = read_params(self.tok('#1{'))
         tokens = self.tok('x')
-        res = match_macro_pattern(pattern,tokens)
+        (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok('x'))])
 
-        pattern = read_params(resetable(self.tok('#1{')))
+        (s,pattern) = read_params(self.tok('#1{'))
         tokens = self.tok('{x}')
-        res = match_macro_pattern(pattern,tokens)
+        (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok('x'))])
 
-        pattern = read_params(resetable(self.tok('#1 delimiter {')))
+        (s,pattern) = read_params(self.tok('#1 delimiter {'))
         tokens = self.tok(' match result delimiter ')
-        res = match_macro_pattern(pattern,tokens)
+        (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok(' match result'))])
 
-        pattern = read_params(resetable(self.tok('#1 delimiter {')))
+        (s,pattern) = read_params(self.tok('#1 delimiter {'))
         tokens = self.tok(' match {result delimiter ')
-        res = match_macro_pattern(pattern,tokens)
+        (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok(' match {result'))])
 
-        pattern = read_params(resetable(self.tok('#1#2{')))
+        (s,pattern) = read_params(self.tok('#1#2{'))
         tokens = self.tok('xy')
-        res = match_macro_pattern(pattern,tokens)
+        (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok('x')), list(self.tok('y'))])
 
-        pattern = read_params(resetable(self.tok('p#1d{')))
+        (s,pattern) = read_params(self.tok('p#1d{'))
         tokens = self.tok('p{he{ll}o}dxd2 some text \par')
-        res = match_macro_pattern(pattern,tokens)
+        (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok('{he{ll}o}'))])
 
-        pattern = read_params(resetable(self.tok('p#1d#2d2{')))
+        (s,pattern) = read_params(self.tok('p#1d#2d2{'))
         tokens = self.tok('p{he{ll}o}dxd2 some text \par')
-        res = match_macro_pattern(pattern,tokens)
+        (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res),
                 [list(self.tok('{he{ll}o}')),
                  list(self.tok('x')) ])
 
-        pattern = read_params(resetable(self.tok('p#1d#2d2#3\par{')))
+        (s,pattern) = read_params(self.tok('p#1d#2d2#3\par{'))
         tokens = self.tok('p{he{ll}o}dxd2 some text \par')
-        res = match_macro_pattern(pattern,tokens)
+        (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(
                 list(res),
                 [list(self.tok('{he{ll}o}')),
                  list(self.tok('x')),
                  list(self.tok_exact(' some text '))])
 
-        pattern = read_params(resetable(self.tok('#1{')))
+        (s,pattern) = read_params(self.tok('#1{'))
         tokens = self.tok('')
         with self.assertRaises(TeXMatchError):
             list(match_macro_pattern(pattern,tokens))
 
-        pattern = read_params(resetable(self.tok('#1#2#3{')))
+        (s,pattern) = read_params(self.tok('#1#2#3{'))
         tokens = self.tok_exact('ab')
         with self.assertRaises(TeXMatchError):
             list(match_macro_pattern(pattern,tokens))

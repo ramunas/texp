@@ -399,10 +399,6 @@ def match_prefix(pref, tokenstream):
     return (tokenstream,True)
 
 
-def consume_prefix(pref, tokenstream):
-    for i in pref:
-        next(tokenstream)
-
 def match_macro_pattern(pattern, tokenstream):
     tokens = pattern[0]
 
@@ -413,26 +409,30 @@ def match_macro_pattern(pattern, tokenstream):
 
     matches = []
     m = []
-    ts = resetable(tokenstream)
+    ts = tokenstream
     for tokens in pattern[1:]:
         if len(tokens) == 0: # non-delimited token
             try:
-                matches.append(next_token_or_group(ts))
+                (ts, m) = next_token_or_group(ts)
+                matches.append(m)
             except StopIteration:
                 raise TeXMatchError("Stream ended while matching a macro pattern")
         else: # delimited, append until match is found
             try:
                 while True:
-                    if match_prefix(tokens, ts):
-                        consume_prefix(tokens, ts)
+                    buf = []
+                    ts = copytobuf(buf, ts)
+                    (ts, matched) = match_prefix(tokens, ts)
+                    if matched:
                         matches.append(m)
                         m = []
                         break
                     else:
+                        ts = itertools.chain(buf, ts)
                         m.append(next(ts))
             except StopIteration:
                 raise TeXMatchError("Stream ended while matching a macro pattern")
-    return matches
+    return (ts, matches)
 
 
 # body and args should be lists of tokens
