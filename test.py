@@ -69,10 +69,10 @@ class TestTeX(unittest.TestCase):
         pass
 
     def tok(self,s):
-        return tokenstream(resetable(iter(s)))
+        return tokenstream(iter(s))
 
     def tok_exact(self,s):
-        return tokenstream(resetable(iter(s)), state=StreamState.middle)
+        return tokenstream(iter(s), state=StreamState.middle)
 
     def test_tokenstream_to_str(self):
         x = self.tok('hello')
@@ -122,18 +122,31 @@ class TestTeX(unittest.TestCase):
         r = control_sequence(resetable(iter("\\\n")), st, t)
         self.assertEqual('',r[2])
 
-    def test_tokenizer_text(self):
+    def test_tokenstream(self):
+        # TODO: definitely better tests neede
         text = 'text'
-        s = resetable(iter(text))
+        s = iter(text)
         e = [ TokenCode(x, CatCode.letter) for x in iter(text) ]
         t = list(tokenstream(s))
         self.assertEqual(t, e)
 
-        s = resetable(self.tok('\macro'))
+        s = self.tok('\macro')
         self.assertEqual(list(s), [ControlSequence('macro')])
 
-        s = resetable(self.tok('\par'))
+        s = self.tok('\macro h')
+        self.assertEqual(list(s), [ControlSequence('macro'), TokenCode('h', CatCode.letter)])
+
+        s = self.tok('\par')
         self.assertEqual(list(s), [ControlSequence('par')])
+
+        s = self.tok("% aa\n")
+        self.assertEqual(list(s), [])
+
+        s = self.tok("% aa\n a")
+        self.assertEqual(list(s), [TokenCode('a', CatCode.letter)])
+
+        s = self.tok("x\n\nx")
+        self.assertEqual(list(s), [TokenCode('x', CatCode.letter), TokenCode(' ', CatCode.space), ControlSequence('par'), TokenCode('x', CatCode.letter)])
 
 
     def test_tokenizer_macro(self):

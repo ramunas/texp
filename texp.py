@@ -141,7 +141,7 @@ class TokenCode:
         self.tok = t
         self.catcode = catcode
     def __repr__(self):
-        return ('"%s" %s' % (self.tok, self.catcode.name))
+        return ('"%s" %s' % (self.tok, self.catcode))
     def __eq__(self,x):
         return x.__class__ == TokenCode and x.catcode == self.catcode and x.tok == self.tok
 
@@ -197,7 +197,8 @@ def control_sequence(bstream, state, catcode_table):
 
     return (bstream, state, name)
 
-def drop_line(bstream, catcode_table):
+
+def drop_line(bstream, state, catcode_table):
     while True:
         c = next(bstream)
         if c == None:
@@ -205,7 +206,8 @@ def drop_line(bstream, catcode_table):
         if catcode_table[c] == CatCode.end_of_line:
             break
 
-    bstream.state = StreamState.new_line
+    state = StreamState.new_line
+    return (bstream, state)
 
 
 # TeXbook, p. 46
@@ -214,52 +216,48 @@ class StreamState:
     new_line        = 1
     skipping_blanks = 2
 
-def nexttoken(bstream, catcode_table):
-    c = peak(bstream, None)
+def nexttoken(bstream, state, catcode_table):
+    c = next(bstream, None)
     if c != None:
         cc = catcode_table[c]
 
         if cc == CatCode.escape:
-            return ControlSequence(control_sequence(bstream, catcode_table))
+            (bstream,state,cs) = control_sequence(prepend(c, bstream), state, catcode_table)
+            return (bstream, state, ControlSequence(cs))
         elif cc == CatCode.space:
-            next(bstream)
-            if bstream.state == StreamState.new_line:
-                return nexttoken(bstream, catcode_table)
-            elif bstream.state == StreamState.skipping_blanks:
-                return nexttoken(bstream, catcode_table)
+            if state == StreamState.new_line:
+                return nexttoken(bstream, state, catcode_table)
+            elif state == StreamState.skipping_blanks:
+                return nexttoken(bstream, state, catcode_table)
             else:
-                bstream.state = StreamState.skipping_blanks
-                return TokenCode(' ', CatCode.space)
+                state = StreamState.skipping_blanks
+                return (bstream, state, TokenCode(' ', CatCode.space))
         elif cc == CatCode.ignored:
-            next(bstream)
-            return nexttoken(bstream, catcode_table)
+            return nexttoken(bstream, state, catcode_table)
         elif cc == CatCode.end_of_line:
-            next(bstream)
-            if bstream.state == StreamState.new_line:
-                bstream.state = StreamState.skipping_blanks
-                return ControlSequence('par')
-            elif bstream.state == StreamState.middle:
-                bstream.state = StreamState.new_line
-                return TokenCode(' ', CatCode.space)
-            elif bstream.state == StreamState.skipping_blanks:
-                return nexttoken(bstream, catcode_table)
+            if state == StreamState.new_line:
+                state = StreamState.skipping_blanks
+                return (bstream, state, ControlSequence('par'))
+            elif state == StreamState.middle:
+                state = StreamState.new_line
+                return (bstream, state, TokenCode(' ', CatCode.space))
+            elif state == StreamState.skipping_blanks:
+                return nexttoken(bstream, state, catcode_table)
         elif cc == CatCode.comment:
-            drop_line(bstream, catcode_table)
-            return nexttoken(bstream, catcode_table)
+            (bstream, state) = drop_line(bstream, state, catcode_table)
+            return nexttoken(bstream, state, catcode_table)
         else:
-            next(bstream)
-            bstream.state = StreamState.middle
-            return TokenCode(c, cc)
+            state = StreamState.middle
+            return (bstream, state, TokenCode(c, cc))
 
-    return None
+    return (bstream, state, None)
 
 
 defaultcatcode_table = CharCatCodeTable()
 
 def tokenstream(bstream, state=StreamState.new_line, catcode_table=defaultcatcode_table):
-    bstream.state = state
     while True:
-        t = nexttoken(bstream, catcode_table)
+        (bstream, state, t) = nexttoken(bstream, state, catcode_table)
         if t == None:
             break
         yield t
