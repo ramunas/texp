@@ -30,7 +30,7 @@ def split_attrs(stream):
     attrs = []
     try:
         while True:
-            x = next_token_or_group(stream)
+            (stream, x) = next_token_or_group(stream)
             attrs.append(x)
     except StopIteration:
         pass
@@ -52,34 +52,40 @@ def split_attrs(stream):
 
 
 def tag(stream):
-    name = tokenstream_to_str(next_token_or_group(stream))
-    attributes = next_token_or_group(stream)
+    (stream, tokens) = next_token_or_group(stream)
+    name = tokenstream_to_str(tokens)
+    (stream, attributes) = next_token_or_group(stream)
     attrs = split_attrs(iter(attributes))
 
     attrstring = ''
     for i in attrs:
         attrstring = attrstring + (' %s="%s"' % (tokenstream_to_str(iter(i[0])), tokenstream_to_str(iter(i[1]))))
-    return (name, attrstring)
+    return (stream, name, attrstring)
 
 def process(stream, page, top=False):
-    for i in stream:
+    while True:
+        i = next(stream, None)
+        if i == None:
+            break
+
         if is_controlsequence(i):
             # tag{name}{{attrname}{val}...}{content}
             if i.name == 'tag':
-                (name, attrstring) = tag(stream)
-                content = next_token_or_group(stream)
+                (stream, name, attrstring) = tag(stream)
+                (stream, content) = next_token_or_group(stream)
 
                 page.send('<%s%s>' % (name, attrstring))
-                process(resetable(iter(content)), page)
+                process(iter(content), page)
                 page.send('</%s>' % name)
             elif i.name == 'opentag':
-                (name, attrstring) = tag(stream)
+                (stream, name, attrstring) = tag(stream)
                 page.send('<%s%s>' % (name, attrstring))
             elif i.name == 'openclosetag':
-                (name, attrstring) = tag(stream)
+                (stream, name, attrstring) = tag(stream)
                 page.send('<%s%s/>' % (name, attrstring))
             elif i.name == 'closetag':
-                name = tokenstream_to_str(next_token_or_group(stream))
+                (stream, tokens) = next_token_or_group(stream)
+                name = tokenstream_to_str(tokens)
                 page.send('</%s>' % name)
             elif i.name == 'par':
                 page.send("\n\n")
@@ -88,7 +94,8 @@ def process(stream, page, top=False):
             elif i.name == 'currentdate':
                 page.send(str(datetime.datetime.now().date()))
             elif i.name == 'newnamedpage':
-                name = tokenstream_to_str(next_token_or_group(stream))
+                (stream, tokens) = next_token_or_group(stream)
+                name = tokenstream_to_str(tokens)
                 if top == True:
                     page.close()
                     page = new_page(name)
@@ -101,15 +108,16 @@ def process(stream, page, top=False):
                 else:
                     raise Exception("\\newpage can only be used at the top level.")
             elif i.name == 'ifempty': # this is a bit of a hack, I should add conditional macros to texp
-                t = next_token_or_group(stream)
-                thn = next_token_or_group(stream)
-                els = next_token_or_group(stream) 
+                (stream, t) = next_token_or_group(stream)
+                (stream, thn) = next_token_or_group(stream)
+                (stream, els) = next_token_or_group(stream) 
                 if len(t) == 0:
-                    process(resetable(iter(thn)),page)
+                    process(iter(thn),page)
                 else:
-                    process(resetable(iter(els)),page)
+                    process(iter(els),page)
             elif i.name == 'includehtmlsnippet':
-                filename = tokenstream_to_str(next_token_or_group(stream))
+                (stream, tokens) = next_token_or_group(stream)
+                filename = tokenstream_to_str(tokens)
                 f = open(filename, 'r')
                 content = f.read()
                 page.send(content)
@@ -137,9 +145,7 @@ def main():
     um = {}
     um['%'] = ([[]], [TokenCode('%', CatCode.other)])
     um['#'] = ([[]], [TokenCode('#', CatCode.other)])
-    s = expand(resetable(tokenstream(resetable(bytestream('main.tex')))), bm, um)
-    # content = iter(read_file('main.tex'))
-    # s = expand(resetable(tokenstream(resetable(content))), bm, um)
+    s = expand(tokenstream(bytestream('main.tex')), bm, um)
     process(s, new_page('index.html'), True)
 
 
