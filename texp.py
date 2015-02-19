@@ -32,60 +32,6 @@ def copytobuf(buf, it):
 def prepend(x, it):
     return itertools.chain(iter([x]), it)
 
-class resetable(object):
-    def __iter__(self): return self
-
-    def __init__(self, stream):
-        self.stream = stream
-        self.read = []
-
-    def __enter__(self):
-        self.read.append([])
-        return self
-
-    def __drop__(self):
-        return self.read.pop()
-
-    def __reset__(self):
-        s = self.__drop__()
-        self.stream = itertools.chain(iter(s), self.stream)
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type == None:
-            self.__reset__()
-
-    def __next__(self):
-        x = next(self.stream)
-        if len(self.read) != 0:
-            self.read[-1].append(x)
-        return x
-
-    def __peak__(self):
-        try:
-            self.__enter__()
-            x = next(self)
-        finally:
-            self.__reset__()
-        return x
-
-
-def peak(stream, *d):
-    if len(d) == 0:
-        return stream.__peak__()
-    elif len(d) == 1:
-        try:
-            return stream.__peak__()
-        except StopIteration:
-            return d[0]
-    else:
-        raise TypeError ("peak expected at most 2 arguments, got %d" % len(d))
-
-
-def is_peakable(t):
-    return hasattr(t, '__peak__')
-
-def is_resetable(t):
-    return hasattr(t, '__reset__')
 
 class CatCode:
     escape      = 0   # Escape character, normally '\'

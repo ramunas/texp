@@ -2,44 +2,6 @@
 import unittest
 from texp import *
 
-class TestResetableStream(unittest.TestCase):
-
-    def test_resetable1(self):
-        x = [1,2,3]
-        s = resetable(iter(x))
-        s.__enter__()
-        list(s)
-        s.__reset__()
-        self.assertEqual(x, list(s))
-
-    def test_resetable2(self):
-        x = [1,2,3]
-        s = resetable(iter(x))
-        list(s)
-        self.assertNotEqual(x, list(s))
-
-    def test_resetable3(self):
-        x = [1,2,3]
-        s = resetable(iter(x))
-        with s:
-            list(s)
-        self.assertEqual(x, list(s))
-
-    def test_resetable4(self):
-        x = [1,2,3]
-        s = resetable(iter(x))
-        with s:
-            with s:
-                list(s)
-            list(s)
-        self.assertEqual(x, list(s))
-
-    def test_resetable_peak(self):
-        x = [1,2,3]
-        s = resetable(iter(x))
-        self.assertEqual(peak(s), 1)
-        self.assertEqual(list(s),x)
-
 
 class TestOther(unittest.TestCase):
     def test_copytobuf(self):
@@ -95,7 +57,7 @@ class TestTeX(unittest.TestCase):
         self.assertTrue(res)
         self.assertEqual([4], list(s))
 
-        rs = resetable(iter([1,2,3,4]))
+        rs = iter([1,2,3,4])
         (s, res) = match_prefix(iter([4,2,3]), rs)
         self.assertFalse(res)
         self.assertEqual([2,3,4], list(s))
@@ -117,10 +79,10 @@ class TestTeX(unittest.TestCase):
         r = control_sequence(iter('\='), state, t)
         self.assertEqual('=',r[2])
 
-        r = control_sequence(resetable(iter('\~')), st, t)
+        r = control_sequence(iter('\~'), st, t)
         self.assertEqual('~',r[2])
 
-        r = control_sequence(resetable(iter("\\\n")), st, t)
+        r = control_sequence(iter("\\\n"), st, t)
         self.assertEqual('',r[2])
 
     def test_tokenstream(self):
@@ -152,7 +114,7 @@ class TestTeX(unittest.TestCase):
 
     def test_tokenizer_macro(self):
         text = '\macro  x'
-        s = resetable(iter(text))
+        s = iter(text)
         t = list(tokenstream(s))
         e = [ControlSequence('macro'), TokenCode('x', CatCode.letter)]
         self.assertEqual(t, e)
@@ -366,35 +328,35 @@ class TestTeX(unittest.TestCase):
 
 
     def test_expand(self):
-        s = resetable(self.tok('\def\macro#1{#1 #1}'))
+        s = self.tok('\def\macro#1{#1 #1}')
         b = expand(s)
         self.assertEqual(list(b), list(self.tok('')))
 
-        s = resetable(self.tok('\def\macro#1{#1 #1}\macro{Hello}'))
+        s = self.tok('\def\macro#1{#1 #1}\macro{Hello}')
         b = expand(s)
         self.assertEqual(list(b), list(self.tok('Hello Hello')))
 
-        s = resetable(self.tok('\def\macro#1{#1 #1}\\unknownmacro{Hello}'))
+        s = self.tok('\def\macro#1{#1 #1}\\unknownmacro{Hello}')
         b = expand(s)
         self.assertEqual(list(b), list(self.tok('\\unknownmacro{Hello}')))
 
-        s = resetable(self.tok('\def\macro#1{#1 #1}\\unknownmacro{\macro{Hello}}'))
+        s = self.tok('\def\macro#1{#1 #1}\\unknownmacro{\macro{Hello}}')
         b = expand(s)
         self.assertEqual(list(b), list(self.tok('\\unknownmacro{Hello Hello}')))
 
-        s = resetable(self.tok('\macro{\def\mac{one}\mac}'))
+        s = self.tok('\macro{\def\mac{one}\mac}')
         b = expand(s, usermacros={})
         self.assertEqual(list(b), list(self.tok('\macro{one}')))
 
-        s = resetable(self.tok('\def\m#1#2{}\m'))
+        s = self.tok('\def\m#1#2{}\m')
         with self.assertRaises(TeXMatchError):
             list(expand(s, usermacros={}))
 
-        s = resetable(self.tok('\def\m#1#2{#1#2}\m\m\m   '))
+        s = self.tok('\def\m#1#2{#1#2}\m\m\m   ')
         with self.assertRaises(TeXMatchError):
             list(expand(s, usermacros={}))
 
-        s = resetable(self.tok('\def\m#1#2{#1#2}\m{\m{}{}}\m{}{}'))
+        s = self.tok('\def\m#1#2{#1#2}\m{\m{}{}}\m{}{}')
         b = expand(s, usermacros={})
         self.assertEqual(list(b), list(self.tok('')))
 
