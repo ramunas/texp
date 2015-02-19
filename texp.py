@@ -391,13 +391,13 @@ def next_token_or_group(tokenstream):
         return (tokenstream, [t])
 
 
-def match_prefix(pref, resetable_stream):
-    with resetable_stream as s:
-        for i in pref:
-            x = next(s,None)
-            if i != x:
-                return False
-    return True
+def match_prefix(pref, tokenstream):
+    for i in pref:
+        x = next(tokenstream, None)
+        if i != x:
+            return (tokenstream, False)
+    return (tokenstream,True)
+
 
 def consume_prefix(pref, tokenstream):
     for i in pref:

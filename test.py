@@ -90,14 +90,15 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(TokenCode('a', CatCode.letter), TokenCode('a', CatCode.letter))
 
     def test_match_prefix(self):
-        rs = resetable(iter([1,2,3,4]))
-        self.assertTrue(match_prefix(iter([1,2,3]), rs))
-        # resets the stream in any case
-        self.assertEqual([1,2,3,4], list(rs))
+        rs = iter([1,2,3,4])
+        (s, res) = match_prefix(iter([1,2,3]), rs)
+        self.assertTrue(res)
+        self.assertEqual([4], list(s))
 
         rs = resetable(iter([1,2,3,4]))
-        self.assertFalse (match_prefix(iter([4,2,3]), rs))
-        self.assertEqual([1,2,3,4], list(rs))
+        (s, res) = match_prefix(iter([4,2,3]), rs)
+        self.assertFalse(res)
+        self.assertEqual([2,3,4], list(s))
 
 
     def test_control_sequence(self):
