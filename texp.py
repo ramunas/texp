@@ -3,6 +3,12 @@
 import itertools
 
 
+class TeXException(Exception):
+    pass
+
+class TeXMatchError(Exception):
+    pass
+
 class StructEq(object):
     def __eq__(self,x):
         return isinstance(self, x.__class__) and self.__dict__ == x.__dict__
@@ -263,8 +269,6 @@ def tokenstream(bstream, state=StreamState.new_line, catcode_table=defaultcatcod
         yield t
 
 
-class TeXException(Exception):
-    pass
 
 def has_catcode(t, catcode):
     return is_tokencode(t) and t.catcode == catcode
@@ -358,8 +362,6 @@ def handle_def (tokenstream, userdefinedmacros):
     userdefinedmacros[cname.name] = (params,body)
 
 
-class TeXMatchError(Exception):
-    pass
 
 
 # assumes that the begin_group token was consumed before calling this
