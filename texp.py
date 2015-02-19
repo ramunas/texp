@@ -338,13 +338,13 @@ def find_highest_param(tokenstream):
 
 
 def read_def(tokenstream):
-    assert is_peakable(tokenstream)
-
     cname = next(tokenstream)
+
     if not(is_controlsequence(cname)):
-        raise TeXException("Control sequence expected")
-    params = read_params(tokenstream)
-    body = read_body(tokenstream)
+        raise TeXMatchError("Control sequence expected")
+
+    (tokenstream,params) = read_params(tokenstream)
+    (tokenstream, body) = read_body(tokenstream)
     h = find_highest_param(iter(body))
     if h == 0:
         raise TeXException("0 cannot be a parameter")
@@ -352,13 +352,13 @@ def read_def(tokenstream):
         h = 0
     if h > len(list(params)) - 1:
         raise TeXException("Body has undefined parameters")
-    return (cname, params, body)
+    return (tokenstream, cname, params, body)
 
 
 def handle_def (tokenstream, userdefinedmacros):
-    assert is_peakable(tokenstream)
-    (cname,params,body) = read_def(tokenstream)
+    (tokenstream,cname,params,body) = read_def(tokenstream)
     userdefinedmacros[cname.name] = (params,body)
+    return tokenstream
 
 
 
