@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import texp
 from texp import *
+import itertools
 import datetime
 import os
 
@@ -129,10 +131,45 @@ def process(stream, page, top=False):
                 pass
             elif has_catcode(i, CatCode.end_group):
                 pass
+            elif i.tok == '~':
+                page.send('&nbsp;')
             else:
                 page.send(i.tok)
 
 
+def expand(tokenstream):
+    bm = defaultbuiltinmacros
+    bm['environ'] = environ_macro()
+    um = {}
+    um['%'] = ([[]], [TokenCode('%', CatCode.other)])
+    um['#'] = ([[]], [TokenCode('#', CatCode.other)])
+    s = texp.expand(tokenstream, bm, um)
+    return s
+
+
+def make_builtin_macro(args, f):
+    def macro (tokenstream, um):
+        a = []
+        for i in args:
+            (tokenstream, x) = next_token_or_group(tokenstream)
+            if i == 'e':
+                a.append(list(expand(iter(x))))
+            else:
+                a.append(x)
+
+        res = f(*a)
+        return itertools.chain(iter(res), tokenstream)
+
+    return macro
+
+def environ_macro():
+    def m(var):
+        var = tokenstream_to_str(iter(var))
+        res = os.environ.get(var)
+        if res == None:
+            raise TeXException("Undefined environement variable '%s'" % var)
+        return [TokenCode(s, CatCode.letter) for s in res]
+    return make_builtin_macro(['e'], m)
 
 def read_file(file):
     f = open(file,'r')
@@ -141,12 +178,8 @@ def read_file(file):
     return c
 
 def main():
-    bm = defaultbuiltinmacros
-    um = {}
-    um['%'] = ([[]], [TokenCode('%', CatCode.other)])
-    um['#'] = ([[]], [TokenCode('#', CatCode.other)])
     content = iter(read_file('main.tex'))
-    s = expand(tokenstream(content), bm, um)
+    s = expand(tokenstream(content))
     process(s, new_page('index.html'), True)
 
 
