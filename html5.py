@@ -112,7 +112,7 @@ def process(stream, page, top=False):
             elif i.name == 'ifempty': # this is a bit of a hack, I should add conditional macros to texp
                 (stream, t) = next_token_or_group(stream)
                 (stream, thn) = next_token_or_group(stream)
-                (stream, els) = next_token_or_group(stream) 
+                (stream, els) = next_token_or_group(stream)
                 if len(t) == 0:
                     process(iter(thn),page)
                 else:
