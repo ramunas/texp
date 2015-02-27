@@ -171,6 +171,7 @@ def environ_macro():
         return [TokenCode(s, CatCode.letter) for s in res]
     return make_builtin_macro(['e'], m)
 
+
 def read_file(file):
     f = open(file,'r')
     c = f.read()

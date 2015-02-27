@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.4
 
 import itertools
+import weakref
 
 
 class TeXException(Exception):
@@ -13,6 +14,9 @@ class StructEq(object):
     def __eq__(self,x):
         return isinstance(self, x.__class__) and self.__dict__ == x.__dict__
 
+
+class list_object(list):
+    pass
 
 def bytestream(file):
     f = open(file)
@@ -29,8 +33,21 @@ def copytobuf(buf, it):
         buf.append(x)
         yield x
 
+def copytoweakbuf(buf, it):
+    while True:
+        if buf() is None:
+            break
+        else:
+            x = next(it)
+            buf().append(x)
+            yield x
+
+    yield from it
+
+
 def prepend(x, it):
     return itertools.chain(iter([x]), it)
+
 
 
 class CatCode:
@@ -366,8 +383,9 @@ def match_macro_pattern(pattern, tokenstream):
         else: # delimited, append until match is found
             try:
                 while True:
-                    buf = []
-                    ts = copytobuf(buf, ts)
+                    buf = list_object()
+                    b = weakref.ref(buf)
+                    ts = copytoweakbuf(b, ts)
                     (ts, matched) = match_prefix(tokens, ts)
                     if matched:
                         matches.append(m)

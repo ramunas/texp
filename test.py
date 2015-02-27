@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import unittest
+import weakref
+import gc
 from texp import *
 
 
@@ -22,6 +24,55 @@ class TestOther(unittest.TestCase):
         self.assertEqual(3, next(it))
         with self.assertRaises(StopIteration):
             next(it)
+
+    def test_copytoweakbuf(self):
+        it = iter([1,2,3])
+        buf = []
+        b = lambda: buf
+        s = copytoweakbuf(b, it)
+        for i in s:
+            pass
+        self.assertEqual([1,2,3],buf)
+
+        it = iter([1,2,3])
+        buf = []
+        b = lambda: buf
+        s = copytoweakbuf(b, it)
+        next(s)
+        self.assertEqual([1],buf)
+        self.assertEqual(2, next(it))
+        self.assertEqual(3, next(it))
+        with self.assertRaises(StopIteration):
+            next(it)
+
+        it = iter([1,2,3])
+        buf = []
+        b = lambda: buf
+        s = copytoweakbuf(b, it)
+        next(s)
+        self.assertEqual([1],buf)
+        buf = None
+        self.assertEqual(b(), None)
+        self.assertEqual(2, next(s))
+        self.assertEqual(3, next(s))
+        with self.assertRaises(StopIteration):
+            next(s)
+
+        # using weakreferences
+        it = iter([1,2,3])
+        class lst(list): pass
+        buf = lst([])
+        b = weakref.ref(buf)
+        s = copytoweakbuf(b, it)
+        next(s)
+        del buf
+        gc.collect()
+        self.assertEqual(b(), None)
+        self.assertEqual(2, next(s))
+        self.assertEqual(3, next(s))
+        with self.assertRaises(StopIteration):
+            next(s)
+
 
 
 class TestTeX(unittest.TestCase):
