@@ -99,8 +99,8 @@ class TestTeX(unittest.TestCase):
 
 
     def test_identitity_cs(self):
-        self.assertEqual(ControlSequence("x"), ControlSequence("x"))
-        self.assertEqual(TokenCode('a', CatCode.letter), TokenCode('a', CatCode.letter))
+        self.assertEqual(control_sequence("x"), control_sequence("x"))
+        self.assertEqual(token_code('a', CatCode.letter), token_code('a', CatCode.letter))
 
     def test_match_prefix(self):
         rs = iter([1,2,3,4])
@@ -114,60 +114,60 @@ class TestTeX(unittest.TestCase):
         self.assertEqual([2,3,4], list(s))
 
 
-    def test_control_sequence(self):
+    def test_read_control_sequence(self):
         state = StreamState.middle
         t = defaultcatcode_table
         s = iter('\macro')
-        (s,st,r) = control_sequence(s, state, t)
+        (s,st,r) = read_control_sequence(s, state, t)
         self.assertEqual('macro',r)
 
         with self.assertRaises(TeXException):
-            control_sequence(iter('macro'), state, t)
+            read_control_sequence(iter('macro'), state, t)
 
         with self.assertRaises(TeXException):
-            control_sequence(iter('\\'), state, t)
+            read_control_sequence(iter('\\'), state, t)
 
-        r = control_sequence(iter('\='), state, t)
+        r = read_control_sequence(iter('\='), state, t)
         self.assertEqual('=',r[2])
 
-        r = control_sequence(iter('\~'), st, t)
+        r = read_control_sequence(iter('\~'), st, t)
         self.assertEqual('~',r[2])
 
-        r = control_sequence(iter("\\\n"), st, t)
+        r = read_control_sequence(iter("\\\n"), st, t)
         self.assertEqual('',r[2])
 
     def test_tokenstream(self):
         # TODO: definitely better tests neede
         text = 'text'
         s = iter(text)
-        e = [ TokenCode(x, CatCode.letter) for x in iter(text) ]
+        e = [ token_code(x, CatCode.letter) for x in iter(text) ]
         t = list(tokenstream(s))
         self.assertEqual(t, e)
 
         s = self.tok('\macro')
-        self.assertEqual(list(s), [ControlSequence('macro')])
+        self.assertEqual(list(s), [control_sequence('macro')])
 
         s = self.tok('\macro h')
-        self.assertEqual(list(s), [ControlSequence('macro'), TokenCode('h', CatCode.letter)])
+        self.assertEqual(list(s), [control_sequence('macro'), token_code('h', CatCode.letter)])
 
         s = self.tok('\par')
-        self.assertEqual(list(s), [ControlSequence('par')])
+        self.assertEqual(list(s), [control_sequence('par')])
 
         s = self.tok("% aa\n")
         self.assertEqual(list(s), [])
 
         s = self.tok("% aa\n a")
-        self.assertEqual(list(s), [TokenCode('a', CatCode.letter)])
+        self.assertEqual(list(s), [token_code('a', CatCode.letter)])
 
         s = self.tok("x\n\nx")
-        self.assertEqual(list(s), [TokenCode('x', CatCode.letter), TokenCode(' ', CatCode.space), ControlSequence('par'), TokenCode('x', CatCode.letter)])
+        self.assertEqual(list(s), [token_code('x', CatCode.letter), token_code(' ', CatCode.space), control_sequence('par'), token_code('x', CatCode.letter)])
 
 
     def test_tokenizer_macro(self):
         text = '\macro  x'
         s = iter(text)
         t = list(tokenstream(s))
-        e = [ControlSequence('macro'), TokenCode('x', CatCode.letter)]
+        e = [control_sequence('macro'), token_code('x', CatCode.letter)]
         self.assertEqual(t, e)
 
     def test_next_group(self):
@@ -239,7 +239,7 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(list(p), [])
 
         p = find_params(self.tok('#1 #2 {#3} #1'))
-        self.assertEqual(list(p), [TokenCode(x, CatCode.other) for x in ['1','2','3','1']])
+        self.assertEqual(list(p), [token_code(x, CatCode.other) for x in ['1','2','3','1']])
 
     def test_find_highest_param(self):
         h = find_highest_param(self.tok(''))

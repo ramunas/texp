@@ -91,7 +91,7 @@ class CharCatCodeTable(dict):
 defaultcatcode_table = CharCatCodeTable()
 
 
-class ControlSequence:
+class control_sequence:
     def __init__(self, name):
         self.name = name
 
@@ -99,10 +99,10 @@ class ControlSequence:
         return '\\' + self.name
 
     def __eq__(self,x):
-        return isinstance(x, ControlSequence) and x.name == self.name
+        return isinstance(x, control_sequence) and x.name == self.name
 
 
-class TokenCode:
+class token_code:
     def __init__(self, t, catcode):
         self.tok = t
         self.catcode = catcode
@@ -111,14 +111,14 @@ class TokenCode:
         return ('"%s" %s' % (self.tok, self.catcode))
 
     def __eq__(self,x):
-        return isinstance(x, TokenCode) and x.catcode == self.catcode and x.tok == self.tok
+        return isinstance(x, token_code) and x.catcode == self.catcode and x.tok == self.tok
 
 
 def is_controlsequence(t):
-    return isinstance(t, ControlSequence)
+    return isinstance(t, control_sequence)
 
 def is_tokencode(t):
-    return isinstance(t, TokenCode)
+    return isinstance(t, token_code)
 
 def tokenstream_to_str(tokenstream):
     r = ''
@@ -131,7 +131,7 @@ def tokenstream_to_str(tokenstream):
 
 
 
-def control_sequence(bstream, state, catcode_table):
+def read_control_sequence(bstream, state, catcode_table):
     name = ''
 
     n = next(bstream,None)
@@ -191,8 +191,8 @@ def nexttoken(bstream, state, catcode_table):
         cc = catcode_table[c]
 
         if cc == CatCode.escape:
-            (bstream,state,cs) = control_sequence(prepend(c, bstream), state, catcode_table)
-            return (bstream, state, ControlSequence(cs))
+            (bstream,state,cs) = read_control_sequence(prepend(c, bstream), state, catcode_table)
+            return (bstream, state, control_sequence(cs))
         elif cc == CatCode.space:
             if state == StreamState.new_line:
                 return nexttoken(bstream, state, catcode_table)
@@ -200,16 +200,16 @@ def nexttoken(bstream, state, catcode_table):
                 return nexttoken(bstream, state, catcode_table)
             else:
                 state = StreamState.skipping_blanks
-                return (bstream, state, TokenCode(' ', CatCode.space))
+                return (bstream, state, token_code(' ', CatCode.space))
         elif cc == CatCode.ignored:
             return nexttoken(bstream, state, catcode_table)
         elif cc == CatCode.end_of_line:
             if state == StreamState.new_line:
                 state = StreamState.skipping_blanks
-                return (bstream, state, ControlSequence('par'))
+                return (bstream, state, control_sequence('par'))
             elif state == StreamState.middle:
                 state = StreamState.new_line
-                return (bstream, state, TokenCode(' ', CatCode.space))
+                return (bstream, state, token_code(' ', CatCode.space))
             elif state == StreamState.skipping_blanks:
                 return nexttoken(bstream, state, catcode_table)
         elif cc == CatCode.comment:
@@ -217,7 +217,7 @@ def nexttoken(bstream, state, catcode_table):
             return nexttoken(bstream, state, catcode_table)
         else:
             state = StreamState.middle
-            return (bstream, state, TokenCode(c, cc))
+            return (bstream, state, token_code(c, cc))
 
     return (bstream, state, None)
 

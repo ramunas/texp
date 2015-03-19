@@ -141,8 +141,8 @@ def expand(tokenstream):
     bm = defaultbuiltinmacros
     bm['environ'] = environ_macro()
     um = {}
-    um['%'] = ([[]], [TokenCode('%', CatCode.other)])
-    um['#'] = ([[]], [TokenCode('#', CatCode.other)])
+    um['%'] = ([[]], [token_code('%', CatCode.other)])
+    um['#'] = ([[]], [token_code('#', CatCode.other)])
     s = texp.expand(tokenstream, bm, um)
     return s
 
@@ -168,7 +168,7 @@ def environ_macro():
         res = os.environ.get(var)
         if res == None:
             raise TeXException("Undefined environement variable '%s'" % var)
-        return [TokenCode(s, CatCode.letter) for s in res]
+        return [token_code(s, CatCode.letter) for s in res]
     return make_builtin_macro(['e'], m)
 
 
