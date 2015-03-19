@@ -10,11 +10,6 @@ class TeXException(Exception):
 class TeXMatchError(Exception):
     pass
 
-class StructEq(object):
-    def __eq__(self,x):
-        return isinstance(self, x.__class__) and self.__dict__ == x.__dict__
-
-
 class list_object(list):
     pass
 
@@ -47,7 +42,6 @@ def copytoweakbuf(buf, it):
 
 def prepend(x, it):
     return itertools.chain(iter([x]), it)
-
 
 
 class CatCode:
@@ -137,14 +131,14 @@ def control_sequence(bstream, state, catcode_table):
     name = ''
 
     n = next(bstream,None)
-    if n == None:
+    if n is None:
         raise TeXException("End of file unexpected while parsing a control sequence")
 
     if catcode_table[n] != CatCode.escape:
         raise TeXException("Escape char expected")
 
     n = next(bstream,None)
-    if n == None:
+    if n is None:
         raise TeXException("End of file unexpected while parsing a control sequence")
 
     cc = catcode_table[n]
@@ -152,7 +146,7 @@ def control_sequence(bstream, state, catcode_table):
         name = n
         while True:
             char = next(bstream, None)
-            if char == None:
+            if char is None:
                 break
             if catcode_table[char] != CatCode.letter:
                 bstream = prepend(char, bstream)
@@ -171,7 +165,7 @@ def control_sequence(bstream, state, catcode_table):
 def drop_line(bstream, state, catcode_table):
     while True:
         c = next(bstream)
-        if c == None:
+        if c is None:
             break
         if catcode_table[c] == CatCode.end_of_line:
             break
@@ -185,6 +179,7 @@ class StreamState:
     middle          = 0
     new_line        = 1
     skipping_blanks = 2
+
 
 def nexttoken(bstream, state, catcode_table):
     c = next(bstream, None)
@@ -227,7 +222,7 @@ def nexttoken(bstream, state, catcode_table):
 def tokenstream(bstream, state=StreamState.new_line, catcode_table=defaultcatcode_table):
     while True:
         (bstream, state, t) = nexttoken(bstream, state, catcode_table)
-        if t == None:
+        if t is None:
             break
         yield t
 
@@ -311,7 +306,7 @@ def read_def(tokenstream):
     h = find_highest_param(iter(body))
     if h == 0:
         raise TeXException("0 cannot be a parameter")
-    if h == None:
+    if h is None:
         h = 0
     if h > len(list(params)) - 1:
         raise TeXException("Body has undefined parameters")
@@ -333,9 +328,9 @@ def next_group(tokenstream):
     while True:
         t = next(tokenstream)
         if has_catcode(t, CatCode.begin_group):
-            n = n + 1
+            n += 1
         elif has_catcode(t, CatCode.end_group):
-            n = n - 1
+            n -= 1
 
         if n == 0:
             break
@@ -406,7 +401,7 @@ def expand_params(body, args):
     for i in b:
         if has_catcode(i, CatCode.param):
             n = next(b, None)
-            if n == None:
+            if n is None:
                 raise TeXException("Malformed body, the body ended with a pram token without the correspoding number")
             for x in args[int(n.tok) - 1]:
                 expanded.append(x)
@@ -423,24 +418,22 @@ def apply_macro(macro,stream):
 
 
 defaultbuiltinmacros = {
-        'def' : handle_def
-        }
+    'def' : handle_def
+}
 
 def expand(tokenstream, builtinmacros=defaultbuiltinmacros, usermacros={}):
     while True:
         t = next(tokenstream, None)
-        if t == None:
+        if t is None:
             break
         if is_controlsequence(t):
             if t.name in builtinmacros:
                 m = builtinmacros[t.name]
                 tokenstream = m(tokenstream, usermacros)
-                # print ("Expanding builtin '%s'" % t.name)
             elif t.name in usermacros:
                 m = usermacros[t.name]
                 (tokenstream, exp) = apply_macro(m, tokenstream)
                 tokenstream = itertools.chain(iter(exp), tokenstream)
-                # print ("Expanding user '%s'" % t.name)
             else:
                 yield t
         else:
