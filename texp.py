@@ -94,27 +94,31 @@ defaultcatcode_table = CharCatCodeTable()
 class ControlSequence:
     def __init__(self, name):
         self.name = name
+
     def __repr__(self):
         return '\\' + self.name
+
     def __eq__(self,x):
-        return x.__class__ == ControlSequence and x.name == self.name
+        return isinstance(x, ControlSequence) and x.name == self.name
 
 
 class TokenCode:
     def __init__(self, t, catcode):
         self.tok = t
         self.catcode = catcode
+
     def __repr__(self):
         return ('"%s" %s' % (self.tok, self.catcode))
+
     def __eq__(self,x):
-        return x.__class__ == TokenCode and x.catcode == self.catcode and x.tok == self.tok
+        return isinstance(x, TokenCode) and x.catcode == self.catcode and x.tok == self.tok
 
 
 def is_controlsequence(t):
-    return t.__class__ == ControlSequence
+    return isinstance(t, ControlSequence)
 
 def is_tokencode(t):
-    return t.__class__ == TokenCode
+    return isinstance(t, TokenCode)
 
 def tokenstream_to_str(tokenstream):
     r = ''
