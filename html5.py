@@ -140,10 +140,10 @@ def process(stream, page, top=False):
 def expand(tokenstream):
     bm = defaultbuiltinmacros
     bm['environ'] = environ_macro()
-    um = {}
-    um['%'] = ([[]], [token_code('%', CatCode.other)])
-    um['#'] = ([[]], [token_code('#', CatCode.other)])
-    s = texp.expand(tokenstream, bm, um)
+    bm['%'] = params_body_to_macro([[]], [token_code('%', CatCode.other)])
+    bm['#'] = params_body_to_macro([[]], [token_code('#', CatCode.other)])
+    state = expand_state(macros=bm)
+    s = texp.expand(tokenstream, state)
     return s
 
 
