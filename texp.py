@@ -318,9 +318,10 @@ def read_def(tokenstream):
 
 
 def params_body_to_macro(params,body):
-    def macro(s, state):
-        (tokenstream, exp) = apply_macro((params, body), s)
-        return itertools.chain(iter(exp), tokenstream)
+    def macro(tokenstream, state):
+        (tokenstream, matches) = match_macro_pattern(params,tokenstream)
+        expansion = expand_params(body, matches)
+        return itertools.chain(iter(expansion), tokenstream)
     macro.definition = (params, body)
     return macro
 
@@ -329,7 +330,6 @@ def macro_def (tokenstream, state):
     (tokenstream,cname,params,body) = read_def(tokenstream)
     state.macros[cname.name] = params_body_to_macro(params, body)
     return tokenstream
-
 
 
 # assumes that the begin_group token was consumed before calling this
@@ -419,13 +419,6 @@ def expand_params(body, args):
         else:
             expanded.append(i)
     return expanded
-
-
-def apply_macro(macro, stream):
-    (pattern,body) = macro
-    (stream, matches) = match_macro_pattern(pattern,stream)
-    return (stream, expand_params(body, matches))
-
 
 
 class expansion_state:
