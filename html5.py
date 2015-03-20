@@ -147,29 +147,14 @@ def expand(tokenstream):
     return s
 
 
-def make_builtin_macro(args, f):
-    def macro (tokenstream, um):
-        a = []
-        for i in args:
-            (tokenstream, x) = next_token_or_group(tokenstream)
-            if i == 'e':
-                a.append(list(expand(iter(x))))
-            else:
-                a.append(x)
-
-        res = f(*a)
-        return itertools.chain(iter(res), tokenstream)
-
-    return macro
-
 def environ_macro():
-    def m(var):
+    def m(state, var):
         var = tokenstream_to_str(iter(var))
         res = os.environ.get(var)
         if res == None:
             raise TeXException("Undefined environement variable '%s'" % var)
         return [token_code(s, CatCode.letter) for s in res]
-    return make_builtin_macro(['e'], m)
+    return define_macro(['e'], m)
 
 
 def read_file(file):

@@ -421,6 +421,22 @@ def expand_params(body, args):
     return expanded
 
 
+def define_macro(args, f):
+    def macro (tokenstream, state):
+        a = []
+        for i in args:
+            (tokenstream, x) = next_token_or_group(tokenstream)
+            if i == 'e':
+                a.append(list(expand(iter(x), state)))
+            else:
+                a.append(x)
+
+        res = f(state, *a)
+        return itertools.chain(iter(res), tokenstream)
+
+    return macro
+
+
 class expansion_state:
     def __init__(self, macros={}):
         self.macros = macros.copy()

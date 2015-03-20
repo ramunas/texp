@@ -415,6 +415,19 @@ class TestTeX(unittest.TestCase):
         b = expand(s, state=new_state)
         self.assertEqual(list(b), list(self.tok('')))
 
+
+    def test_define_macro(self):
+        s = expansion_state(macros=defaultbuiltinmacros)
+        def swap(state, x, y):
+            return list(y) + list(x)
+        s.macros['m'] = define_macro(['','e'], swap)
+
+        t = self.tok('\def\g#1{#1#1}\m{3}{\g{1}}')
+
+        self.assertEqual(list(expand(t,s)), list(self.tok('113')))
+
+
+
 if __name__ == '__main__':
     unittest.main()
 
