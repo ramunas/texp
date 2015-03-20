@@ -284,11 +284,11 @@ class TestTeX(unittest.TestCase):
             (s, n,p,b) = read_def(s)
 
 
-    def test_handle_def(self):
+    def test_macro_def(self):
         s = self.tok('\macro#1{#1}')
-        m = {}
-        handle_def(s,m)
-        self.assertEqual(m['macro'], ([[],[]], list(self.tok('#1'))))
+        m = expand_state()
+        macro_def(s,m)
+        self.assertEqual(m.macros['macro'].definition, ([[],[]], list(self.tok('#1'))))
 
 
     def test_match_macro_pattern(self):
@@ -396,19 +396,23 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(list(b), list(self.tok('\\unknownmacro{Hello Hello}')))
 
         s = self.tok('\macro{\def\mac{one}\mac}')
-        b = expand(s, usermacros={})
+        new_state = expand_state(macros=defaultbuiltinmacros)
+        b = expand(s, state=new_state)
         self.assertEqual(list(b), list(self.tok('\macro{one}')))
 
         s = self.tok('\def\m#1#2{}\m')
         with self.assertRaises(TeXMatchError):
-            list(expand(s, usermacros={}))
+            new_state = expand_state(macros=defaultbuiltinmacros)
+            list(expand(s, state=new_state))
 
         s = self.tok('\def\m#1#2{#1#2}\m\m\m   ')
         with self.assertRaises(TeXMatchError):
-            list(expand(s, usermacros={}))
+            new_state = expand_state(macros=defaultbuiltinmacros)
+            list(expand(s, state=new_state))
 
         s = self.tok('\def\m#1#2{#1#2}\m{\m{}{}}\m{}{}')
-        b = expand(s, usermacros={})
+        new_state = expand_state(macros=defaultbuiltinmacros)
+        b = expand(s, state=new_state)
         self.assertEqual(list(b), list(self.tok('')))
 
 if __name__ == '__main__':

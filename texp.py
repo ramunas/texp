@@ -317,11 +317,18 @@ def read_def(tokenstream):
     return (tokenstream, cname, params, body)
 
 
-def handle_def (tokenstream, userdefinedmacros):
-    (tokenstream,cname,params,body) = read_def(tokenstream)
-    userdefinedmacros[cname.name] = (params,body)
-    return tokenstream
+def params_body_to_macro(params,body):
+    def macro(s, state):
+        (tokenstream, exp) = apply_macro((params, body), s)
+        return itertools.chain(iter(exp), tokenstream)
+    macro.definition = (params, body)
+    return macro
 
+
+def macro_def (tokenstream, state):
+    (tokenstream,cname,params,body) = read_def(tokenstream)
+    state.macros[cname.name] = params_body_to_macro(params, body)
+    return tokenstream
 
 
 
@@ -414,32 +421,30 @@ def expand_params(body, args):
     return expanded
 
 
-def apply_macro(macro,stream):
+def apply_macro(macro, stream):
     (pattern,body) = macro
     (stream, matches) = match_macro_pattern(pattern,stream)
     return (stream, expand_params(body, matches))
 
 
 
+class expand_state:
+    def __init__(self, macros={}):
+        self.macros = macros.copy()
+
+
 defaultbuiltinmacros = {
-    'def' : handle_def
+    'def' : macro_def
 }
 
-def expand(tokenstream, builtinmacros=defaultbuiltinmacros, usermacros={}):
+def expand(tokenstream, state=expand_state(macros=defaultbuiltinmacros)):
     while True:
         t = next(tokenstream, None)
         if t is None:
             break
-        if is_controlsequence(t):
-            if t.name in builtinmacros:
-                m = builtinmacros[t.name]
-                tokenstream = m(tokenstream, usermacros)
-            elif t.name in usermacros:
-                m = usermacros[t.name]
-                (tokenstream, exp) = apply_macro(m, tokenstream)
-                tokenstream = itertools.chain(iter(exp), tokenstream)
-            else:
-                yield t
+        if is_controlsequence(t) and t.name in state.macros:
+            m = state.macros[t.name]
+            tokenstream = m(tokenstream, state)
         else:
             yield t
 
