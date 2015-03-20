@@ -428,7 +428,7 @@ def apply_macro(macro, stream):
 
 
 
-class expand_state:
+class expansion_state:
     def __init__(self, macros={}):
         self.macros = macros.copy()
 
@@ -437,7 +437,7 @@ defaultbuiltinmacros = {
     'def' : macro_def
 }
 
-def expand(tokenstream, state=expand_state(macros=defaultbuiltinmacros)):
+def expand(tokenstream, state=expansion_state(macros=defaultbuiltinmacros)):
     while True:
         t = next(tokenstream, None)
         if t is None:

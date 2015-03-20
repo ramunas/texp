@@ -286,7 +286,7 @@ class TestTeX(unittest.TestCase):
 
     def test_macro_def(self):
         s = self.tok('\macro#1{#1}')
-        m = expand_state()
+        m = expansion_state()
         macro_def(s,m)
         self.assertEqual(m.macros['macro'].definition, ([[],[]], list(self.tok('#1'))))
 
@@ -396,22 +396,22 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(list(b), list(self.tok('\\unknownmacro{Hello Hello}')))
 
         s = self.tok('\macro{\def\mac{one}\mac}')
-        new_state = expand_state(macros=defaultbuiltinmacros)
+        new_state = expansion_state(macros=defaultbuiltinmacros)
         b = expand(s, state=new_state)
         self.assertEqual(list(b), list(self.tok('\macro{one}')))
 
         s = self.tok('\def\m#1#2{}\m')
         with self.assertRaises(TeXMatchError):
-            new_state = expand_state(macros=defaultbuiltinmacros)
+            new_state = expansion_state(macros=defaultbuiltinmacros)
             list(expand(s, state=new_state))
 
         s = self.tok('\def\m#1#2{#1#2}\m\m\m   ')
         with self.assertRaises(TeXMatchError):
-            new_state = expand_state(macros=defaultbuiltinmacros)
+            new_state = expansion_state(macros=defaultbuiltinmacros)
             list(expand(s, state=new_state))
 
         s = self.tok('\def\m#1#2{#1#2}\m{\m{}{}}\m{}{}')
-        new_state = expand_state(macros=defaultbuiltinmacros)
+        new_state = expansion_state(macros=defaultbuiltinmacros)
         b = expand(s, state=new_state)
         self.assertEqual(list(b), list(self.tok('')))
 

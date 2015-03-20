@@ -142,7 +142,7 @@ def expand(tokenstream):
     bm['environ'] = environ_macro()
     bm['%'] = params_body_to_macro([[]], [token_code('%', CatCode.other)])
     bm['#'] = params_body_to_macro([[]], [token_code('#', CatCode.other)])
-    state = expand_state(macros=bm)
+    state = expansion_state(macros=bm)
     s = texp.expand(tokenstream, state)
     return s
 
