@@ -442,8 +442,17 @@ class expansion_state:
         self.macros = macros.copy()
 
 
+def m_read_file(state, fname):
+    n = tokenstream_to_str(fname)
+    s = iter(open(n).read())
+    return expand(tokenstream(s), state)
+
+
+macro_read_file = define_macro(['e'], m_read_file)
+
 defaultbuiltinmacros = {
-    'def' : macro_def
+    'def' : macro_def,
+    'readfile' : macro_read_file
 }
 
 def expand(tokenstream, state=expansion_state(macros=defaultbuiltinmacros)):
