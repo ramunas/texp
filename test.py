@@ -427,6 +427,26 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(list(expand(t,s)), list(self.tok('113')))
 
 
+    def test_macro_dict(self):
+        macros = macro_dict()
+        macros['def'] = macro_def
+
+        @macros.define(['e'])
+        def macro(state, arg):
+            return arg + [token_code(x, CatCode.letter) for x in 'hello']
+
+        @macros.define([], name='foo')
+        def macro(state):
+            return []
+
+        self.assertTrue('macro' in macros)
+        self.assertTrue('foo' in macros)
+
+        t = self.tok('\def\m{World }\macro\m')
+        s = expansion_state(macros=macros)
+
+        self.assertEqual(list(expand(t,s)), list(self.tok('World hello')))
+
 
 if __name__ == '__main__':
     unittest.main()

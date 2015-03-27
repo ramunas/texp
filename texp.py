@@ -437,6 +437,7 @@ def define_macro(args, f):
     return macro
 
 
+
 class expansion_state:
     def __init__(self, macros={}):
         self.macros = macros.copy()
@@ -449,6 +450,17 @@ def m_read_file(state, fname):
 
 
 macro_read_file = define_macro(['e'], m_read_file)
+
+
+class macro_dict(dict):
+
+    def define(self, args, name=None):
+        def func(f):
+            n = f.__name__ if name is None else name
+            self[n] = define_macro(args, f)
+            return f
+        return func
+
 
 defaultbuiltinmacros = {
     'def' : macro_def,
