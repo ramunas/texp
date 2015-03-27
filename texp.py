@@ -462,10 +462,10 @@ class macro_dict(dict):
         return func
 
 
-defaultbuiltinmacros = {
+defaultbuiltinmacros = macro_dict({
     'def' : macro_def,
     'readfile' : macro_read_file
-}
+})
 
 def expand(tokenstream, state=expansion_state(macros=defaultbuiltinmacros)):
     while True:

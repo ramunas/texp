@@ -137,24 +137,25 @@ def process(stream, page, top=False):
                 page.send(i.tok)
 
 
+
+macros = macro_dict(defaultbuiltinmacros)
+
+@macros.define(['e'])
+def environ(state, var):
+    var = tokenstream_to_str(iter(var))
+    res = os.environ.get(var)
+    if res == None:
+        raise TeXException("Undefined environement variable '%s'" % var)
+    return [token_code(s, CatCode.letter) for s in res]
+
+
 def expand(tokenstream):
-    bm = defaultbuiltinmacros
-    bm['environ'] = environ_macro()
+    bm = macros
     bm['%'] = params_body_to_macro([[]], [token_code('%', CatCode.other)])
     bm['#'] = params_body_to_macro([[]], [token_code('#', CatCode.other)])
     state = expansion_state(macros=bm)
     s = texp.expand(tokenstream, state)
     return s
-
-
-def environ_macro():
-    def m(state, var):
-        var = tokenstream_to_str(iter(var))
-        res = os.environ.get(var)
-        if res == None:
-            raise TeXException("Undefined environement variable '%s'" % var)
-        return [token_code(s, CatCode.letter) for s in res]
-    return define_macro(['e'], m)
 
 
 def read_file(file):
