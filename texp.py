@@ -41,7 +41,8 @@ def copytoweakbuf(buf, it):
 
 
 def prepend(x, it):
-    return itertools.chain(iter([x]), it)
+    yield x
+    yield from it
 
 
 class CatCode:
