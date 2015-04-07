@@ -10,8 +10,6 @@ class TeXException(Exception):
 class TeXMatchError(Exception):
     pass
 
-class list_object(list):
-    pass
 
 def bytestream(file):
     f = open(file)
@@ -20,29 +18,6 @@ def bytestream(file):
         if not c:
             break
         yield c
-
-
-def copytobuf(buf, it):
-    while True:
-        x = next(it)
-        buf.append(x)
-        yield x
-
-def copytoweakbuf(buf, it):
-    while True:
-        if buf() is None:
-            break
-        else:
-            x = next(it)
-            buf().append(x)
-            yield x
-
-    yield from it
-
-
-def prepend(x, it):
-    yield x
-    yield from it
 
 
 class func_stream:
