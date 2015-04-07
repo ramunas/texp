@@ -30,12 +30,11 @@ class new_page(object):
 
 def split_attrs(stream):
     attrs = []
-    try:
-        while True:
-            (stream, x) = next_token_or_group(stream)
-            attrs.append(x)
-    except StopIteration:
-        pass
+    while True:
+        (stream, x) = next_token_or_group(stream)
+        if x is None:
+            break
+        attrs.append(x)
 
     r = []
     t = []
@@ -57,7 +56,7 @@ def tag(stream):
     (stream, tokens) = next_token_or_group(stream)
     name = tokenstream_to_str(tokens)
     (stream, attributes) = next_token_or_group(stream)
-    attrs = split_attrs(iter(attributes))
+    attrs = split_attrs(func_stream(attributes))
 
     attrstring = ''
     for i in attrs:
@@ -65,8 +64,11 @@ def tag(stream):
     return (stream, name, attrstring)
 
 def process(stream, page, top=False):
+    if not isinstance(stream, func_stream):
+        stream = func_stream(stream)
+
     while True:
-        i = next(stream, None)
+        (i, stream) = stream.next()
         if i == None:
             break
 
