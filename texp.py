@@ -46,8 +46,8 @@ def prepend(x, it):
 
 
 class func_stream:
-    def __init__(self, iterator):
-        self.it = iterator
+    def __init__(self, iterable):
+        self.it = iter(iterable)
         self.next_stream = None
         self.buf = None
 
@@ -56,6 +56,12 @@ class func_stream:
             self.next_stream = func_stream(self.it)
             self.buf = next(self.it, None)
         return (self.buf, self.next_stream)
+
+    def prepend(self, x):
+        s = func_stream(self.it)
+        s.next_stream = self
+        s.buf = x
+        return s
         
 
 
@@ -149,14 +155,14 @@ def tokenstream_to_str(tokenstream):
 def read_control_sequence(bstream, state, catcode_table):
     name = ''
 
-    n = next(bstream,None)
+    (n, bstream) = bstream.next()
     if n is None:
         raise TeXException("End of file unexpected while parsing a control sequence")
 
     if catcode_table[n] != CatCode.escape:
         raise TeXException("Escape char expected")
 
-    n = next(bstream,None)
+    (n, bstream) = bstream.next()
     if n is None:
         raise TeXException("End of file unexpected while parsing a control sequence")
 
@@ -164,11 +170,11 @@ def read_control_sequence(bstream, state, catcode_table):
     if cc == CatCode.letter:
         name = n
         while True:
-            char = next(bstream, None)
+            (char, bstream) = bstream.next()
             if char is None:
                 break
             if catcode_table[char] != CatCode.letter:
-                bstream = prepend(char, bstream)
+                bstream = bstream.prepend(char)
                 break
             name = name + char
         state = StreamState.skipping_blanks
@@ -183,7 +189,7 @@ def read_control_sequence(bstream, state, catcode_table):
 
 def drop_line(bstream, state, catcode_table):
     while True:
-        c = next(bstream)
+        (c, bstream) = bstream.next()
         if c is None:
             break
         if catcode_table[c] == CatCode.end_of_line:
@@ -201,12 +207,12 @@ class StreamState:
 
 
 def nexttoken(bstream, state, catcode_table):
-    c = next(bstream, None)
+    (c, bstream) = bstream.next()
     if c != None:
         cc = catcode_table[c]
 
         if cc == CatCode.escape:
-            (bstream,state,cs) = read_control_sequence(prepend(c, bstream), state, catcode_table)
+            (bstream,state,cs) = read_control_sequence(bstream.prepend(c), state, catcode_table)
             return (bstream, state, control_sequence(cs))
         elif cc == CatCode.space:
             if state == StreamState.new_line:
@@ -239,6 +245,9 @@ def nexttoken(bstream, state, catcode_table):
 
 
 def tokenstream(bstream, state=StreamState.new_line, catcode_table=defaultcatcode_table):
+    if not isinstance(bstream, func_stream):
+        bstream = func_stream(bstream)
+
     while True:
         (bstream, state, t) = nexttoken(bstream, state, catcode_table)
         if t is None:

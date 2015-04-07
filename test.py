@@ -21,6 +21,14 @@ class TestOther(unittest.TestCase):
         (v,s3) = s2.next()
         self.assertEqual(v, 2)
 
+        s = s1.prepend(0)
+        (v, s0) = s.next()
+        self.assertEqual(v, 0)
+        (v, s1) = s0.next()
+        self.assertEqual(v, 1)
+        (v, s0) = s.next()
+        self.assertEqual(v, 0)
+
         x = next(it)
         self.assertEqual(x, 3)
         
@@ -137,27 +145,26 @@ class TestTeX(unittest.TestCase):
     def test_read_control_sequence(self):
         state = StreamState.middle
         t = defaultcatcode_table
-        s = iter('\macro')
+        s = func_stream('\macro')
         (s,st,r) = read_control_sequence(s, state, t)
         self.assertEqual('macro',r)
 
         with self.assertRaises(TeXException):
-            read_control_sequence(iter('macro'), state, t)
+            read_control_sequence(func_stream('macro'), state, t)
 
         with self.assertRaises(TeXException):
-            read_control_sequence(iter('\\'), state, t)
+            read_control_sequence(func_stream('\\'), state, t)
 
-        r = read_control_sequence(iter('\='), state, t)
+        r = read_control_sequence(func_stream('\='), state, t)
         self.assertEqual('=',r[2])
 
-        r = read_control_sequence(iter('\~'), st, t)
+        r = read_control_sequence(func_stream('\~'), st, t)
         self.assertEqual('~',r[2])
 
-        r = read_control_sequence(iter("\\\n"), st, t)
+        r = read_control_sequence(func_stream("\\\n"), st, t)
         self.assertEqual('',r[2])
 
     def test_tokenstream(self):
-        # TODO: definitely better tests neede
         text = 'text'
         s = iter(text)
         e = [ token_code(x, CatCode.letter) for x in iter(text) ]
