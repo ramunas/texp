@@ -31,7 +31,7 @@ class TestOther(unittest.TestCase):
 
         x = next(it)
         self.assertEqual(x, 3)
-        
+
 
 
     def test_copytobuf(self):
@@ -112,6 +112,9 @@ class TestTeX(unittest.TestCase):
     def tok(self,s):
         return tokenstream(iter(s))
 
+    def ftok(self, s):
+        return func_stream(self.tok(s))
+
     def tok_exact(self,s):
         return tokenstream(iter(s), state=StreamState.middle)
 
@@ -131,15 +134,23 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(token_code('a', CatCode.letter), token_code('a', CatCode.letter))
 
     def test_match_prefix(self):
-        rs = iter([1,2,3,4])
+        rs = func_stream([1,2,3,4])
         (s, res) = match_prefix(iter([1,2,3]), rs)
         self.assertTrue(res)
-        self.assertEqual([4], list(s))
+        (v, _) = s.next()
+        self.assertEqual(4, v)
 
-        rs = iter([1,2,3,4])
-        (s, res) = match_prefix(iter([4,2,3]), rs)
+        rs = func_stream([1,2,3,4])
+        (s, res) = match_prefix(iter([1,2,4]), rs)
         self.assertFalse(res)
-        self.assertEqual([2,3,4], list(s))
+        (v, _) = s.next()
+        self.assertEqual(1, v)
+
+        rs = func_stream([1,2,3,4])
+        (s, res) = match_prefix(iter([6,2,4]), rs)
+        self.assertFalse(res)
+        (v, _) = s.next()
+        self.assertEqual(1, v)
 
 
     def test_read_control_sequence(self):
@@ -198,61 +209,61 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(t, e)
 
     def test_next_group(self):
-        s = tokenstream(iter('group}'))
+        s = self.ftok('group}')
         (s,group) = next_group(s)
         res = list(tokenstream(iter('group')))
         self.assertEqual(res, list(group))
 
-        s = tokenstream(iter('{group}'))
-        with self.assertRaises(StopIteration):
+        s = self.ftok('{group}')
+        with self.assertRaises(TeXMatchError):
             group = next_group(s)
 
     def test_next_token_or_group(self):
-        s = tokenstream(iter(''))
-        with self.assertRaises(StopIteration):
-            list(next_token_or_group(s)[1])
+        s = self.ftok('')
+        (s, r) = next_token_or_group(s)
+        self.assertEqual(r, None)
 
-        s = tokenstream(iter('{group}'))
+        s = self.ftok('{group}')
         (s,group) = next_token_or_group(s)
         res = list(tokenstream(iter('group')))
         self.assertEqual(res, list(group))
 
-        s = tokenstream(iter('g'))
+        s = self.ftok('g')
         (s,group) = next_token_or_group(s)
         res = list(tokenstream(iter('g')))
         self.assertEqual(res, list(group))
 
 
     def test_read_params(self):
-        s = self.tok('{')
+        s = func_stream(self.tok('{'))
         args = read_params(s)
         self.assertEqual([[]], args[1])
 
-        s = self.tok('#1{')
+        s = func_stream(self.tok('#1{'))
         args = read_params(s)
         self.assertEqual([[],[]], args[1])
 
-        s = self.tok('#1delim{')
+        s = func_stream(self.tok('#1delim{'))
         args = read_params(s)
         self.assertEqual([[],list(self.tok('delim'))], args[1])
 
-        s = self.tok('#1#2{')
+        s = func_stream(self.tok('#1#2{'))
         args = read_params(s)
         self.assertEqual([[],[],[]], args[1])
 
-        s = self.tok('#1#3{')
+        s = func_stream(self.tok('#1#3{'))
         with self.assertRaises(TeXMatchError):
             args = read_params(s)
 
-        s = self.tok('#a{')
+        s = func_stream(self.tok('#a{'))
         with self.assertRaises(TeXMatchError):
             args = read_params(s)
 
-        s = self.tok('#0{')
+        s = func_stream(self.tok('#0{'))
         with self.assertRaises(TeXMatchError):
             args = read_params(s)
 
-        s = self.tok('pref#1delim1#2delim2{')
+        s = func_stream(self.tok('pref#1delim1#2delim2{'))
         args = read_params(s)
         tk = lambda s: list(self.tok(s))
         self.assertEqual([tk('pref'),tk('delim1'),tk('delim2')], args[1])
@@ -280,94 +291,94 @@ class TestTeX(unittest.TestCase):
 
     def test_read_body(self):
         t = "body #1 \\text{#2} #3"
-        s1 = self.tok("{%s}" % t)
+        s1 = self.ftok("{%s}" % t)
         s2 = self.tok(t)
         (s,b) = read_body(s1)
         self.assertEqual(list(b), list(s2))
 
     def test_read_def(self):
-        s = self.tok("\\name{}")
-        (s, n,p,b) = read_def(s)
+        s = func_stream(self.tok("\\name{}"))
+        (s,n,p,b) = read_def(s)
         self.assertEqual(n.name, "name")
         self.assertEqual([[]], p)
         self.assertEqual(list(b), list(self.tok('')))
 
-        s = self.tok("\\name#1#2#3{#1#2#3}")
+        s = self.ftok("\\name#1#2#3{#1#2#3}")
         (s, n,p,b) = read_def(s)
         self.assertEqual(n.name, "name")
         self.assertEqual([[],[],[],[]], p)
         self.assertEqual(list(b), list(self.tok("#1#2#3")))
 
-        s = self.tok("\\macro{#0}")
+        s = self.ftok("\\macro{#0}")
         with self.assertRaises(TeXException):
             (s, n,p,b) = read_def(s)
 
-        s = self.tok("\\macro{#1}")
+        s = self.ftok("\\macro{#1}")
         with self.assertRaises(TeXException):
             (s, n,p,b) = read_def(s)
 
-        s = self.tok("\\name#1#2#3{#1#2#4#3}")
+        s = self.ftok("\\name#1#2#3{#1#2#4#3}")
         with self.assertRaises(TeXException):
             (s, n,p,b) = read_def(s)
 
 
     def test_macro_def(self):
-        s = self.tok('\macro#1{#1}')
+        s = self.ftok('\macro#1{#1}')
         m = expansion_state()
         macro_def(s,m)
         self.assertEqual(m.macros['macro'].definition, ([[],[]], list(self.tok('#1'))))
 
 
     def test_match_macro_pattern(self):
-        (s,pattern) = read_params(self.tok('x{'))
-        tokens = self.tok('x')
-        (s, res) = match_macro_pattern(pattern,tokens)
+        (s,pattern) = read_params(func_stream(self.tok('x{')))
+        tokens = func_stream(self.tok('x'))
+        (s, res) = match_macro_pattern(pattern, tokens)
         self.assertEqual(list(res), [])
 
-        (s,pattern) = read_params(self.tok('x{'))
-        tokens = self.tok('y')
+        (s,pattern) = read_params(func_stream(self.tok('x{')))
+        tokens = func_stream(self.tok('y'))
         with self.assertRaises(TeXMatchError):
-            res = match_macro_pattern(pattern,tokens)
+            res = match_macro_pattern(pattern, tokens)
 
-        (s,pattern) = read_params(self.tok('#1{'))
-        tokens = self.tok('x')
+        (s,pattern) = read_params(func_stream(self.tok('#1{')))
+        tokens = func_stream(self.tok('x'))
         (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok('x'))])
 
-        (s,pattern) = read_params(self.tok('#1{'))
-        tokens = self.tok('{x}')
+        (s,pattern) = read_params(func_stream(self.tok('#1{')))
+        tokens = func_stream(self.tok('{x}'))
         (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok('x'))])
 
-        (s,pattern) = read_params(self.tok('#1 delimiter {'))
-        tokens = self.tok(' match result delimiter ')
+        (s,pattern) = read_params(func_stream(self.tok('#1 delimiter {')))
+        tokens = func_stream(self.tok(' match result delimiter '))
         (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok(' match result'))])
 
-        (s,pattern) = read_params(self.tok('#1 delimiter {'))
-        tokens = self.tok(' match {result delimiter ')
+        (s,pattern) = read_params(func_stream(self.tok('#1 delimiter {')))
+        tokens = func_stream(self.tok(' match {result delimiter '))
         (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok(' match {result'))])
 
-        (s,pattern) = read_params(self.tok('#1#2{'))
-        tokens = self.tok('xy')
+        (s,pattern) = read_params(func_stream(self.tok('#1#2{')))
+        tokens = func_stream(self.tok('xy'))
         (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok('x')), list(self.tok('y'))])
 
-        (s,pattern) = read_params(self.tok('p#1d{'))
-        tokens = self.tok('p{he{ll}o}dxd2 some text \par')
+        (s,pattern) = read_params(func_stream(self.tok('p#1d{')))
+        tokens = func_stream(self.tok('p{he{ll}o}dxd2 some text \par'))
         (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res), [list(self.tok('{he{ll}o}'))])
 
-        (s,pattern) = read_params(self.tok('p#1d#2d2{'))
-        tokens = self.tok('p{he{ll}o}dxd2 some text \par')
+        (s,pattern) = read_params(func_stream(self.tok('p#1d#2d2{')))
+        tokens = func_stream(self.tok('p{he{ll}o}dxd2 some text \par'))
         (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(list(res),
                 [list(self.tok('{he{ll}o}')),
                  list(self.tok('x')) ])
 
-        (s,pattern) = read_params(self.tok('p#1d#2d2#3\par{'))
-        tokens = self.tok('p{he{ll}o}dxd2 some text \par')
+        (s,pattern) = read_params(func_stream(self.tok('p#1d#2d2#3\par{')))
+        tokens = func_stream(self.tok('p{he{ll}o}dxd2 some text \par'))
         (s,res) = match_macro_pattern(pattern,tokens)
         self.assertEqual(
                 list(res),
@@ -375,13 +386,13 @@ class TestTeX(unittest.TestCase):
                  list(self.tok('x')),
                  list(self.tok_exact(' some text '))])
 
-        (s,pattern) = read_params(self.tok('#1{'))
-        tokens = self.tok('')
+        (s,pattern) = read_params(func_stream(self.tok('#1{')))
+        tokens = func_stream(self.tok(''))
         with self.assertRaises(TeXMatchError):
             list(match_macro_pattern(pattern,tokens))
 
-        (s,pattern) = read_params(self.tok('#1#2#3{'))
-        tokens = self.tok_exact('ab')
+        (s,pattern) = read_params(func_stream(self.tok('#1#2#3{')))
+        tokens = func_stream(self.tok_exact('ab'))
         with self.assertRaises(TeXMatchError):
             list(match_macro_pattern(pattern,tokens))
 

@@ -64,6 +64,21 @@ class func_stream:
         return s
         
 
+class concat_func_streams(func_stream):
+    def __init__(self, f1, f2):
+        self.f1 = f1
+        self.f2 = f2
+
+    def next(self):
+        (v, s) = self.f1.next()
+        if v is None:
+            return self.f2.next()
+        return (v, concat_func_streams(s, self.f2))
+
+    def prepend(self,x):
+        self.f1 = self.f1.prepend(x)
+        return self
+
 
 class CatCode:
     escape      = 0   # Escape character, normally '\'
@@ -265,10 +280,9 @@ def read_params(tokenstream):
     curr_arg = []
     args = []
     while True:
-        # t = peak(tokenstream)
-        t = next(tokenstream)
+        (t, tokenstream) = tokenstream.next()
         if has_catcode(t, CatCode.param):
-            n = next(tokenstream)
+            (n, tokenstream) = tokenstream.next()
             if is_tokencode(n):
                 try:
                     i = int(n.tok)
@@ -284,7 +298,7 @@ def read_params(tokenstream):
             else:
                 raise TeXMatchError("Not an integer")
         elif has_catcode(t, CatCode.begin_group):
-            tokenstream = prepend(t, tokenstream)
+            tokenstream = tokenstream.prepend(t)
             args.append(curr_arg)
             break
         else:
@@ -294,11 +308,11 @@ def read_params(tokenstream):
 
 def read_body(tokenstream):
     n = 1
-    t = next(tokenstream)
+    (t, tokenstream) = tokenstream.next()
     body = []
     if has_catcode(t, CatCode.begin_group):
         while True:
-            t = next(tokenstream)
+            (t, tokenstream) = tokenstream.next()
             if has_catcode(t, CatCode.begin_group):
                 n = n + 1
             elif has_catcode(t, CatCode.end_group):
@@ -311,25 +325,25 @@ def read_body(tokenstream):
     return (tokenstream, body)
 
 
-def find_params(tokenstream):
-    for i in tokenstream:
+def find_params(tokens):
+    for i in tokens:
         if has_catcode(i, CatCode.param):
-            yield next(tokenstream)
+            yield next(tokens)
 
-def find_highest_param(tokenstream):
-    params = [int(x.tok) for x in find_params(tokenstream)]
+def find_highest_param(tokens):
+    params = [int(x.tok) for x in find_params(tokens)]
     if len(params) == 0:
         return None
     return max (params)
 
 
 def read_def(tokenstream):
-    cname = next(tokenstream)
+    (cname, tokenstream) = tokenstream.next()
 
     if not(is_controlsequence(cname)):
         raise TeXMatchError("Control sequence expected")
 
-    (tokenstream,params) = read_params(tokenstream)
+    (tokenstream, params) = read_params(tokenstream)
     (tokenstream, body) = read_body(tokenstream)
     h = find_highest_param(iter(body))
     if h == 0:
@@ -345,7 +359,7 @@ def params_body_to_macro(params,body):
     def macro(tokenstream, state):
         (tokenstream, matches) = match_macro_pattern(params,tokenstream)
         expansion = expand_params(body, matches)
-        return itertools.chain(iter(expansion), tokenstream)
+        return concat_func_streams(func_stream(expansion), tokenstream)
     macro.definition = (params, body)
     return macro
 
@@ -361,7 +375,11 @@ def next_group(tokenstream):
     n = 1
     x = []
     while True:
-        t = next(tokenstream)
+        (t, tokenstream) = tokenstream.next()
+
+        if t is None:
+            raise TeXMatchError("End of stream unexpected while reading a group")
+
         if has_catcode(t, CatCode.begin_group):
             n += 1
         elif has_catcode(t, CatCode.end_group):
@@ -376,8 +394,9 @@ def next_group(tokenstream):
 
 
 def next_token_or_group(tokenstream):
-    t = next(tokenstream)
-    x = None
+    (t, tokenstream) = tokenstream.next()
+    if t is None:
+        return (tokenstream, None)
     if has_catcode(t, CatCode.begin_group):
         return next_group(tokenstream)
     else:
@@ -385,11 +404,14 @@ def next_token_or_group(tokenstream):
 
 
 def match_prefix(pref, tokenstream):
+    ts = tokenstream
     for i in pref:
-        x = next(tokenstream, None)
+        (x, tokenstream) = tokenstream.next()
+        if x is None:
+            return (ts, False)
         if i != x:
-            return (tokenstream, False)
-    return (tokenstream,True)
+            return (ts, False)
+    return (tokenstream, True)
 
 
 def match_macro_pattern(pattern, tokenstream):
@@ -397,7 +419,8 @@ def match_macro_pattern(pattern, tokenstream):
 
     # match the first pattern
     for t in tokens:
-        if t != next(tokenstream):
+        (tok, tokenstream) = tokenstream.next()
+        if t != tok:
             raise TeXMatchError("Pattern does not match")
 
     matches = []
@@ -405,27 +428,22 @@ def match_macro_pattern(pattern, tokenstream):
     ts = tokenstream
     for tokens in pattern[1:]:
         if len(tokens) == 0: # non-delimited token
-            try:
-                (ts, m) = next_token_or_group(ts)
-                matches.append(m)
-            except StopIteration:
+            (ts, m) = next_token_or_group(ts)
+            if m is None:
                 raise TeXMatchError("Stream ended while matching a macro pattern")
+            matches.append(m)
         else: # delimited, append until match is found
-            try:
-                while True:
-                    buf = list_object()
-                    b = weakref.ref(buf)
-                    ts = copytoweakbuf(b, ts)
-                    (ts, matched) = match_prefix(tokens, ts)
-                    if matched:
-                        matches.append(m)
-                        m = []
-                        break
-                    else:
-                        ts = itertools.chain(buf, ts)
-                        m.append(next(ts))
-            except StopIteration:
-                raise TeXMatchError("Stream ended while matching a macro pattern")
+            while True:
+                (ts, matched) = match_prefix(tokens, ts)
+                if matched:
+                    matches.append(m)
+                    m = []
+                    break
+                else:
+                    (x, ts) = ts.next()
+                    if x is None:
+                        raise TeXMatchError("Stream ended while matching a macro pattern")
+                    m.append(x)
     return (ts, matches)
 
 
@@ -450,13 +468,15 @@ def define_macro(args, f):
         a = []
         for i in args:
             (tokenstream, x) = next_token_or_group(tokenstream)
+            if x is None:
+                raise TeXMatchError("End of stream while matching arguments")
             if i == 'e':
                 a.append(list(expand(iter(x), state)))
             else:
                 a.append(x)
 
         res = f(state, *a)
-        return itertools.chain(iter(res), tokenstream)
+        return concat_func_streams(func_stream(res), tokenstream)
 
     return macro
 
@@ -492,8 +512,11 @@ defaultbuiltinmacros = macro_dict({
 })
 
 def expand(tokenstream, state=expansion_state(macros=defaultbuiltinmacros)):
+    if not isinstance(tokenstream, func_stream):
+        tokenstream = func_stream(tokenstream)
+
     while True:
-        t = next(tokenstream, None)
+        (t, tokenstream) = tokenstream.next()
         if t is None:
             break
         if is_controlsequence(t) and t.name in state.macros:
