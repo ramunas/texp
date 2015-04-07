@@ -6,6 +6,26 @@ from texp import *
 
 
 class TestOther(unittest.TestCase):
+    def test_func_stream(self):
+        it = iter([1,2,3])
+
+        s1 = func_stream(it)
+        (v,s2) = s1.next()
+        self.assertEqual(v, 1)
+        (v,s3) = s2.next()
+        self.assertEqual(v, 2)
+
+        # it is functional, calling again will return the same stream
+        (v,s2) = s1.next()
+        self.assertEqual(v, 1)
+        (v,s3) = s2.next()
+        self.assertEqual(v, 2)
+
+        x = next(it)
+        self.assertEqual(x, 3)
+        
+
+
     def test_copytobuf(self):
         it = iter([1,2,3])
         buf = []

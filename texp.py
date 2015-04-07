@@ -45,6 +45,20 @@ def prepend(x, it):
     yield from it
 
 
+class func_stream:
+    def __init__(self, iterator):
+        self.it = iterator
+        self.next_stream = None
+        self.buf = None
+
+    def next(self):
+        if self.next_stream is None:
+            self.next_stream = func_stream(self.it)
+            self.buf = next(self.it, None)
+        return (self.buf, self.next_stream)
+        
+
+
 class CatCode:
     escape      = 0   # Escape character, normally '\'
     begin_group = 1   # Begin grouping, normally {
