@@ -1,8 +1,5 @@
 #!/usr/bin/env python3.4
 
-import itertools
-import weakref
-
 
 class TeXException(Exception):
     pass
@@ -11,17 +8,8 @@ class TeXMatchError(Exception):
     pass
 
 
-def bytestream(file):
-    f = open(file)
-    while True:
-        c = f.read(1)
-        if not c:
-            break
-        yield c
-
-
 class func_stream:
-    __slots__ = ['it', 'next_stream', 'buf']
+    __slots__ = 'it', 'next_stream', 'buf'
 
     def __init__(self, iterable):
         self.it = iter(iterable)
@@ -39,10 +27,10 @@ class func_stream:
         s.next_stream = self
         s.buf = x
         return s
-        
+
 
 class concat_func_streams(func_stream):
-    __slots__ = ['f1', 'f2']
+    __slots__ = 'f1', 'f2'
 
     def __init__(self, f1, f2):
         self.f1 = f1
