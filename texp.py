@@ -21,6 +21,8 @@ def bytestream(file):
 
 
 class func_stream:
+    __slots__ = ['it', 'next_stream', 'buf']
+
     def __init__(self, iterable):
         self.it = iter(iterable)
         self.next_stream = None
@@ -40,6 +42,8 @@ class func_stream:
         
 
 class concat_func_streams(func_stream):
+    __slots__ = ['f1', 'f2']
+
     def __init__(self, f1, f2):
         self.f1 = f1
         self.f2 = f2
