@@ -398,6 +398,20 @@ class TestTeX(unittest.TestCase):
 
         self.assertEqual(list(expand(t,s)), list(self.tok('\g{1}{3}')))
 
+    def test_macro_catcode(self):
+        s = expansion_state(macros=defaultbuiltinmacros)
+        s.macros['catcode'] = macro_catcode
+
+        t = self.tok('\catcode`@=11') # tex behavior
+        # t = self.tok('\catcode`\%={11}')
+        list(expand(t,s))
+
+        self.assertEqual(s.catcode['@'], 11)
+        # self.assertEqual(s.catcode['%'], 11)
+
+        # self.assertEqual(list(expand(t,s)), list(self.tok('\g{1}{3}')))
+
+
     def test_macro_dict(self):
         macros = macro_dict()
         macros['def'] = macro_def

@@ -208,9 +208,10 @@ def read_control_sequence(bstream, state, catcode_table):
 
 def drop_line(bstream, state, catcode_table):
     while True:
-        (c,pos), bstream = bstream.next()
+        c, bstream = bstream.next()
         if c is None:
             break
+        c,pos = c
         if catcode_table[c] == CatCode.end_of_line:
             break
 
@@ -516,6 +517,27 @@ def define_macro_pat(pattern):
     return wrap
 
 
+
+@define_macro_pat('#1=#2')
+def macro_catcode(state, t, n):
+    # expand the args
+    t = list(expand(iter(t), state))
+    n = list(expand(iter(n), state))
+
+    if not (len(t) == 2 and all(is_tokencode(i) for i in t) and t[0].tok == '`'):
+        raise TeXMatchError("Unknown amount of arguments given to catcode")
+
+    x = (i.tok for i in n)
+    cc = int(''.join(x))
+
+    if not (cc >= 0 and cc <= 15):
+        raise TeXMatchError("Unknown cat code given %d" % cc)
+
+    state.catcode[t[1].tok] = cc
+
+    return []
+
+
 class expansion_state:
     def __init__(self, macros={}, catcode=catcode_map()):
         self.macros = macros.copy()
@@ -543,7 +565,8 @@ class macro_dict(dict):
 
 defaultbuiltinmacros = macro_dict({
     'def' : macro_def,
-    'readfile' : macro_read_file
+    'readfile' : macro_read_file,
+    'catcode' : macro_catcode
 })
 
 def expand(tokenstream, state=expansion_state(macros=defaultbuiltinmacros)):
