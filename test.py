@@ -21,14 +21,6 @@ class TestOther(unittest.TestCase):
         (v,s3) = s2.next()
         self.assertEqual(v, 2)
 
-        s = s1.prepend(0)
-        (v, s0) = s.next()
-        self.assertEqual(v, 0)
-        (v, s1) = s0.next()
-        self.assertEqual(v, 1)
-        (v, s0) = s.next()
-        self.assertEqual(v, 0)
-
         x = next(it)
         self.assertEqual(x, 3)
 
@@ -106,7 +98,7 @@ class TestTeX(unittest.TestCase):
         r = read_control_sequence(func_stream("\\\n"), st, t)
         self.assertEqual('',r[2])
 
-    def test_tokenstream(self):
+    def test_tokenize(self):
         text = 'text'
         s = iter(text)
         e = [ token_code(x, CatCode.letter) for x in iter(text) ]

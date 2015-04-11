@@ -34,12 +34,6 @@ class func_stream:
             self.buf = next(self.it, None)
         return (self.buf, self.next_stream)
 
-    def prepend(self, x):
-        s = func_stream(self.it)
-        s.next_stream = self
-        s.buf = x
-        return s
-
 
 class concat_func_streams(func_stream):
     __slots__ = 'f1', 'f2'
@@ -53,10 +47,6 @@ class concat_func_streams(func_stream):
         if v is None:
             return self.f2.next()
         return (v, concat_func_streams(s, self.f2))
-
-    def prepend(self,x):
-        self.f1 = self.f1.prepend(x)
-        return self
 
 
 class CatCode:
@@ -164,11 +154,12 @@ def read_control_sequence(bstream, state, catcode_table):
     if cc == CatCode.letter:
         name = n
         while True:
+            prev_bstream = bstream
             (char, bstream) = bstream.next()
             if char is None:
                 break
             if catcode_table[char] != CatCode.letter:
-                bstream = bstream.prepend(char)
+                bstream = prev_bstream
                 break
             name = name + char
         state = StreamState.skipping_blanks
@@ -201,12 +192,13 @@ class StreamState:
 
 
 def nexttoken(bstream, state, catcode_table):
+    prev_bstream = bstream
     (c, bstream) = bstream.next()
     if c != None:
         cc = catcode_table[c]
 
         if cc == CatCode.escape:
-            (bstream,state,cs) = read_control_sequence(bstream.prepend(c), state, catcode_table)
+            (bstream,state,cs) = read_control_sequence(prev_bstream, state, catcode_table)
             return (bstream, state, control_sequence(cs))
         elif cc == CatCode.space:
             if state == StreamState.new_line:
@@ -259,6 +251,7 @@ def read_params(tokenstream):
     curr_arg = []
     args = []
     while True:
+        prev_tokenstream = tokenstream
         (t, tokenstream) = tokenstream.next()
         if has_catcode(t, CatCode.param):
             (n, tokenstream) = tokenstream.next()
@@ -277,7 +270,7 @@ def read_params(tokenstream):
             else:
                 raise TeXMatchError("Not an integer")
         elif has_catcode(t, CatCode.begin_group):
-            tokenstream = tokenstream.prepend(t)
+            tokenstream = prev_tokenstream
             args.append(curr_arg)
             break
         else:
