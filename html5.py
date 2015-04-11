@@ -168,7 +168,7 @@ def read_file(file):
 
 def main():
     content = iter(read_file('main.tex'))
-    s = expand(tokenstream(content))
+    s = expand(tokenize(content))
     process(s, new_page('index.html'), True)
 
 
