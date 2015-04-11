@@ -7,7 +7,6 @@ class TeXException(Exception):
 class TeXMatchError(Exception):
     def __init__(self, msg, pos=None):
         super().__init__(msg, pos)
-        # self.pos = pos
 
 
 class position:
@@ -500,6 +499,21 @@ def define_macro(args, f):
 
     return macro
 
+
+# a decorator that uses the macro patterns of the def command to define a builtin macro
+# @define_macro_pat('#1=#2')
+# def swap(state, x, y):
+#     return list(y) + list(x)
+# s.macros['m'] = swap
+def define_macro_pat(pattern):
+    _, params = read_params(func_stream(tokenize(iter_pos(pattern + '{'))))
+    def wrap(f):
+        def macro(tokenstream, state):
+            tokenstream, matches = match_macro_pattern(params, tokenstream)
+            res = f(state, *matches)
+            return concat_func_streams(func_stream(res), tokenstream)
+        return macro
+    return wrap
 
 
 class expansion_state:

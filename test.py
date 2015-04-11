@@ -387,6 +387,16 @@ class TestTeX(unittest.TestCase):
 
         self.assertEqual(list(expand(t,s)), list(self.tok('113')))
 
+    def test_define_macro_pat(self):
+        s = expansion_state(macros=defaultbuiltinmacros)
+        @define_macro_pat('#1=#2')
+        def swap(state, x, y):
+            return list(y) + list(x)
+        s.macros['m'] = swap
+
+        t = self.tok('\m{3}={\g{1}}')
+
+        self.assertEqual(list(expand(t,s)), list(self.tok('\g{1}{3}')))
 
     def test_macro_dict(self):
         macros = macro_dict()
