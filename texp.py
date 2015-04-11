@@ -8,6 +8,15 @@ class TeXMatchError(Exception):
     pass
 
 
+class position:
+    __slots__ = 'filename', 'col', 'ln'
+
+    def __init__(self, filename=None, col=1, ln=1):
+        self.filename = filename
+        self.col = col
+        self.ln = ln
+
+
 def iter_pos(it, filename=None, col=1, ln=1):
     for x in it:
         if x == '\n':
@@ -16,7 +25,7 @@ def iter_pos(it, filename=None, col=1, ln=1):
         else:
             col += 1
 
-        yield x, filename, col, ln
+        yield x, position(filename, col, ln)
 
 
 
@@ -97,8 +106,11 @@ defaultcatcode_table = CharCatCodeTable()
 
 
 class control_sequence:
-    def __init__(self, name):
+    __slots__ = 'name', 'pos'
+
+    def __init__(self, name, pos=None):
         self.name = name
+        self.pos = pos
 
     def __repr__(self):
         return '\\' + self.name
@@ -108,9 +120,12 @@ class control_sequence:
 
 
 class token_code:
-    def __init__(self, t, catcode):
+    __slots__ = 'tok', 'catcode', 'pos'
+
+    def __init__(self, t, catcode, pos=None):
         self.tok = t
         self.catcode = catcode
+        self.pos = pos
 
     def __repr__(self):
         return ('"%s" %s' % (self.tok, self.catcode))
