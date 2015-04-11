@@ -83,10 +83,10 @@ class TestTeX(unittest.TestCase):
         (s,st,r) = read_control_sequence(s, state, t)
         self.assertEqual('macro',r)
 
-        with self.assertRaises(TeXException):
+        with self.assertRaises(TeXMatchError):
             read_control_sequence(func_stream(iter_pos('macro')), state, t)
 
-        with self.assertRaises(TeXException):
+        with self.assertRaises(TeXMatchError):
             read_control_sequence(func_stream(iter_pos('\\')), state, t)
 
         r = read_control_sequence(func_stream(iter_pos('\=')), state, t)
@@ -233,15 +233,15 @@ class TestTeX(unittest.TestCase):
         self.assertEqual(list(b), list(self.tok("#1#2#3")))
 
         s = self.ftok("\\macro{#0}")
-        with self.assertRaises(TeXException):
+        with self.assertRaises(TeXMatchError):
             (s, n,p,b) = read_def(s)
 
         s = self.ftok("\\macro{#1}")
-        with self.assertRaises(TeXException):
+        with self.assertRaises(TeXMatchError):
             (s, n,p,b) = read_def(s)
 
         s = self.ftok("\\name#1#2#3{#1#2#4#3}")
-        with self.assertRaises(TeXException):
+        with self.assertRaises(TeXMatchError):
             (s, n,p,b) = read_def(s)
 
 

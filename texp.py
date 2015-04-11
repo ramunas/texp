@@ -5,7 +5,9 @@ class TeXException(Exception):
     pass
 
 class TeXMatchError(Exception):
-    pass
+    def __init__(self, msg, pos=None):
+        super().__init__(msg, pos)
+        # self.pos = pos
 
 
 class position:
@@ -15,6 +17,12 @@ class position:
         self.filename = filename
         self.col = col
         self.ln = ln
+
+    def __str__(self):
+        return '%s:%d:%d' % \
+                (self.filename if self.filename is not None else '-', self.ln, self.col)
+
+    __repr__ = __str__
 
 
 def iter_pos(it, filename=None, col=1, ln=1):
@@ -157,16 +165,16 @@ def read_control_sequence(bstream, state, catcode_table):
 
     n, bstream = bstream.next()
     if n is None:
-        raise TeXException("End of file unexpected while parsing a control sequence")
+        raise TeXMatchError("End of file unexpected while parsing a control sequence")
 
-    n,pos = n
+    n, pos = n
 
     if catcode_table[n] != CatCode.escape:
-        raise TeXException("Escape char expected")
+        raise TeXMatchError("Escape char expected", pos)
 
     n, bstream = bstream.next()
     if n is None:
-        raise TeXException("End of file unexpected while parsing a control sequence")
+        raise TeXMatchError("End of file unexpected while parsing a control sequence", pos)
 
     n, pos = n
 
@@ -282,16 +290,16 @@ def read_params(tokenstream):
                 try:
                     i = int(n.tok)
                 except ValueError:
-                    raise TeXMatchError("Invalid argument char '%s'" % n.tok)
+                    raise TeXMatchError("Invalid argument char '%s'" % n.tok, n.pos)
                 if i == 0:
-                    raise TeXMatchError("Parameter cannot be 0")
+                    raise TeXMatchError("Parameter cannot be 0", n.pos)
                 if i != arg_nr:
-                    raise TeXMatchError("Arguments need to be sequential")
+                    raise TeXMatchError("Arguments need to be sequential", n.pos)
                 args.append(curr_arg)
                 arg_nr = arg_nr + 1
                 curr_arg = []
             else:
-                raise TeXMatchError("Not an integer")
+                raise TeXMatchError("Not an integer", n.pos)
         elif has_catcode(t, CatCode.begin_group):
             tokenstream = prev_tokenstream
             args.append(curr_arg)
@@ -304,6 +312,7 @@ def read_params(tokenstream):
 def read_body(tokenstream):
     n = 1
     (t, tokenstream) = tokenstream.next()
+    start_pos = t.pos
     body = []
     if has_catcode(t, CatCode.begin_group):
         while True:
@@ -316,7 +325,7 @@ def read_body(tokenstream):
                 break
             body.append(t)
     else:
-        raise TeXException("Failed to parse body")
+        raise TeXMatchError("Failed to parse body", start_pos)
     return (tokenstream, body)
 
 
@@ -336,17 +345,17 @@ def read_def(tokenstream):
     (cname, tokenstream) = tokenstream.next()
 
     if not(is_controlsequence(cname)):
-        raise TeXMatchError("Control sequence expected")
+        raise TeXMatchError("Control sequence expected", cname.pos)
 
     (tokenstream, params) = read_params(tokenstream)
     (tokenstream, body) = read_body(tokenstream)
     h = find_highest_param(iter(body))
     if h == 0:
-        raise TeXException("0 cannot be a parameter")
+        raise TeXMatchError("0 cannot be a parameter", cname.pos)
     if h is None:
         h = 0
     if h > len(list(params)) - 1:
-        raise TeXException("Body has undefined parameters")
+        raise TeXMatchError("Body has undefined parameters", cname.pos)
     return (tokenstream, cname, params, body)
 
 
@@ -369,11 +378,18 @@ def macro_def (tokenstream, state):
 def next_group(tokenstream):
     n = 1
     x = []
+
+    t, _ = tokenstream.next()
+    if t is None:
+        raise TeXMatchError("End of stream unexpected while reading a group")
+
+    pos = t.pos
+
     while True:
-        (t, tokenstream) = tokenstream.next()
+        t, tokenstream = tokenstream.next()
 
         if t is None:
-            raise TeXMatchError("End of stream unexpected while reading a group")
+            raise TeXMatchError("End of stream unexpected while reading a group", pos)
 
         if has_catcode(t, CatCode.begin_group):
             n += 1
@@ -414,18 +430,22 @@ def match_macro_pattern(pattern, tokenstream):
 
     # match the first pattern
     for t in tokens:
-        (tok, tokenstream) = tokenstream.next()
+        tok, tokenstream = tokenstream.next()
         if t != tok:
-            raise TeXMatchError("Pattern does not match")
+            raise TeXMatchError("Pattern does not match", tok.pos)
 
     matches = []
     m = []
     ts = tokenstream
+
+    t, _ = tokenstream.next()
+    pos = t.pos if t is not None else None
+
     for tokens in pattern[1:]:
         if len(tokens) == 0: # non-delimited token
             (ts, m) = next_token_or_group(ts)
             if m is None:
-                raise TeXMatchError("Stream ended while matching a macro pattern")
+                raise TeXMatchError("Stream ended while matching a macro pattern", pos)
             matches.append(m)
         else: # delimited, append until match is found
             while True:
@@ -437,7 +457,7 @@ def match_macro_pattern(pattern, tokenstream):
                 else:
                     (x, ts) = ts.next()
                     if x is None:
-                        raise TeXMatchError("Stream ended while matching a macro pattern")
+                        raise TeXMatchError("Stream ended while matching a macro pattern", pos)
                     m.append(x)
     return (ts, matches)
 
@@ -450,7 +470,7 @@ def expand_params(body, args):
         if has_catcode(i, CatCode.param):
             n = next(b, None)
             if n is None:
-                raise TeXException("Malformed body, the body ended with a pram token without the correspoding number")
+                raise TeXException("Malformed body, the body ended with a param token without the correspoding number")
             for x in args[int(n.tok) - 1]:
                 expanded.append(x)
         else:
