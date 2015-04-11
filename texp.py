@@ -86,7 +86,7 @@ class CatCode:
     invalid     = 15  # Invalid character, normally <delete>
 
 
-class CharCatCodeTable(dict):
+class catcode_map(dict):
     def __init__(self):
         self.update({
             '\\' : CatCode.escape,
@@ -110,8 +110,13 @@ class CharCatCodeTable(dict):
         else:
             return CatCode.other
 
+    def copy(self):
+        n = type(self)()
+        n.update(self)
+        return n
 
-defaultcatcode_table = CharCatCodeTable()
+
+defaultcatcode_table = catcode_map()
 
 
 class control_sequence:
@@ -498,8 +503,9 @@ def define_macro(args, f):
 
 
 class expansion_state:
-    def __init__(self, macros={}):
+    def __init__(self, macros={}, catcode=catcode_map()):
         self.macros = macros.copy()
+        self.catcode = catcode.copy()
 
 
 def m_read_file(state, fname):
