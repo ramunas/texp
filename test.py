@@ -33,13 +33,13 @@ class TestTeX(unittest.TestCase):
         pass
 
     def tok(self,s):
-        return tokenize(iter(s))
+        return tokenize(iter_pos(iter(s)))
 
     def ftok(self, s):
         return func_stream(self.tok(s))
 
     def tok_exact(self,s):
-        return tokenize(iter(s), state=StreamState.middle)
+        return tokenize(iter_pos(s), state=StreamState.middle)
 
     def test_tokenstream_to_str(self):
         x = self.tok('hello')
@@ -79,30 +79,30 @@ class TestTeX(unittest.TestCase):
     def test_read_control_sequence(self):
         state = StreamState.middle
         t = defaultcatcode_table
-        s = func_stream('\macro')
+        s = func_stream(iter_pos('\macro'))
         (s,st,r) = read_control_sequence(s, state, t)
         self.assertEqual('macro',r)
 
         with self.assertRaises(TeXException):
-            read_control_sequence(func_stream('macro'), state, t)
+            read_control_sequence(func_stream(iter_pos('macro')), state, t)
 
         with self.assertRaises(TeXException):
-            read_control_sequence(func_stream('\\'), state, t)
+            read_control_sequence(func_stream(iter_pos('\\')), state, t)
 
-        r = read_control_sequence(func_stream('\='), state, t)
+        r = read_control_sequence(func_stream(iter_pos('\=')), state, t)
         self.assertEqual('=',r[2])
 
-        r = read_control_sequence(func_stream('\~'), st, t)
+        r = read_control_sequence(func_stream(iter_pos('\~')), st, t)
         self.assertEqual('~',r[2])
 
-        r = read_control_sequence(func_stream("\\\n"), st, t)
+        r = read_control_sequence(func_stream(iter_pos("\\\n")), st, t)
         self.assertEqual('',r[2])
 
     def test_tokenize(self):
         text = 'text'
         s = iter(text)
         e = [ token_code(x, CatCode.letter) for x in iter(text) ]
-        t = list(tokenize(s))
+        t = list(tokenize(iter_pos(s)))
         self.assertEqual(t, e)
 
         s = self.tok('\macro')
@@ -126,7 +126,7 @@ class TestTeX(unittest.TestCase):
 
     def test_tokenizer_macro(self):
         text = '\macro  x'
-        s = iter(text)
+        s = iter_pos(text)
         t = list(tokenize(s))
         e = [control_sequence('macro'), token_code('x', CatCode.letter)]
         self.assertEqual(t, e)
@@ -134,7 +134,7 @@ class TestTeX(unittest.TestCase):
     def test_next_group(self):
         s = self.ftok('group}')
         (s,group) = next_group(s)
-        res = list(tokenize(iter('group')))
+        res = list(tokenize(iter_pos('group')))
         self.assertEqual(res, list(group))
 
         s = self.ftok('{group}')
@@ -148,12 +148,12 @@ class TestTeX(unittest.TestCase):
 
         s = self.ftok('{group}')
         (s,group) = next_token_or_group(s)
-        res = list(tokenize(iter('group')))
+        res = list(tokenize(iter_pos('group')))
         self.assertEqual(res, list(group))
 
         s = self.ftok('g')
         (s,group) = next_token_or_group(s)
-        res = list(tokenize(iter('g')))
+        res = list(tokenize(iter_pos('g')))
         self.assertEqual(res, list(group))
 
 
