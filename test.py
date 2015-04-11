@@ -41,13 +41,13 @@ class TestTeX(unittest.TestCase):
         pass
 
     def tok(self,s):
-        return tokenstream(iter(s))
+        return tokenize(iter(s))
 
     def ftok(self, s):
         return func_stream(self.tok(s))
 
     def tok_exact(self,s):
-        return tokenstream(iter(s), state=StreamState.middle)
+        return tokenize(iter(s), state=StreamState.middle)
 
     def test_tokenstream_to_str(self):
         x = self.tok('hello')
@@ -110,7 +110,7 @@ class TestTeX(unittest.TestCase):
         text = 'text'
         s = iter(text)
         e = [ token_code(x, CatCode.letter) for x in iter(text) ]
-        t = list(tokenstream(s))
+        t = list(tokenize(s))
         self.assertEqual(t, e)
 
         s = self.tok('\macro')
@@ -135,14 +135,14 @@ class TestTeX(unittest.TestCase):
     def test_tokenizer_macro(self):
         text = '\macro  x'
         s = iter(text)
-        t = list(tokenstream(s))
+        t = list(tokenize(s))
         e = [control_sequence('macro'), token_code('x', CatCode.letter)]
         self.assertEqual(t, e)
 
     def test_next_group(self):
         s = self.ftok('group}')
         (s,group) = next_group(s)
-        res = list(tokenstream(iter('group')))
+        res = list(tokenize(iter('group')))
         self.assertEqual(res, list(group))
 
         s = self.ftok('{group}')
@@ -156,12 +156,12 @@ class TestTeX(unittest.TestCase):
 
         s = self.ftok('{group}')
         (s,group) = next_token_or_group(s)
-        res = list(tokenstream(iter('group')))
+        res = list(tokenize(iter('group')))
         self.assertEqual(res, list(group))
 
         s = self.ftok('g')
         (s,group) = next_token_or_group(s)
-        res = list(tokenstream(iter('g')))
+        res = list(tokenize(iter('g')))
         self.assertEqual(res, list(group))
 
 

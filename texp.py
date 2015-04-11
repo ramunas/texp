@@ -8,6 +8,18 @@ class TeXMatchError(Exception):
     pass
 
 
+def iter_pos(it, filename=None, col=1, ln=1):
+    for x in it:
+        if x == '\n':
+            col = 1
+            ln += 1
+        else:
+            col += 1
+
+        yield x, filename, col, ln
+
+
+
 class func_stream:
     __slots__ = 'it', 'next_stream', 'buf'
 
@@ -226,7 +238,7 @@ def nexttoken(bstream, state, catcode_table):
 
 
 
-def tokenstream(bstream, state=StreamState.new_line, catcode_table=defaultcatcode_table):
+def tokenize(bstream, state=StreamState.new_line, catcode_table=defaultcatcode_table):
     if not isinstance(bstream, func_stream):
         bstream = func_stream(bstream)
 
@@ -483,7 +495,7 @@ def expand(tokenstream, state=expansion_state(macros=defaultbuiltinmacros)):
         tokenstream = func_stream(tokenstream)
 
     while True:
-        (t, tokenstream) = tokenstream.next()
+        t, tokenstream = tokenstream.next()
         if t is None:
             break
         if is_controlsequence(t) and t.name in state.macros:
