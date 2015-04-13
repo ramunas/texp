@@ -547,7 +547,7 @@ class expansion_state:
 def m_read_file(state, fname):
     n = tokenstream_to_str(fname)
     s = iter(open(n).read())
-    return expand(tokenstream(s), state)
+    return expand(tokenize(s), state)
 
 
 macro_read_file = define_macro(['e'], m_read_file)
