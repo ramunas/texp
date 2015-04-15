@@ -230,7 +230,7 @@ def nexttoken(bstream, state, catcode_table):
     prev_bstream = bstream
     c, bstream = bstream.next()
     if c != None:
-        c,pos = c
+        c, pos = c
         cc = catcode_table[c]
 
         if cc == CatCode.escape:
@@ -546,7 +546,7 @@ class expansion_state:
 
 def m_read_file(state, fname):
     n = tokenstream_to_str(fname)
-    s = iter(open(n).read())
+    s = iter_pos(open(n).read())
     return expand(tokenize(s), state)
 
 
