@@ -1,9 +1,6 @@
 #!/usr/bin/env python3.4
 
 
-class TeXException(Exception):
-    pass
-
 class MatchError(Exception):
     def __init__(self, msg, pos=None):
         super().__init__(msg, pos)
@@ -159,7 +156,7 @@ def tokenstream_to_str(tokenstream):
         if is_tokencode(x):
             r = r + x.tok
         else:
-            raise TeXException('Cannot convert the control sequence "%s" to a string' % x.name)
+            raise Exception('Cannot convert the control sequence "%s" to a string' % x.name)
     return r
 
 
@@ -475,7 +472,7 @@ def expand_params(body, args):
         if has_catcode(i, CatCode.param):
             n = next(b, None)
             if n is None:
-                raise TeXException("Malformed body, the body ended with a param token without the correspoding number")
+                raise Exception("Malformed body, the body ended with a param token without the correspoding number")
             for x in args[int(n.tok) - 1]:
                 expanded.append(x)
         else:

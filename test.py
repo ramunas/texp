@@ -48,7 +48,7 @@ class TestTeX(unittest.TestCase):
         x = self.tok('')
         self.assertEqual(tokenstream_to_str(x), '')
 
-        with self.assertRaises(TeXException):
+        with self.assertRaises(Exception):
             tokenstream_to_str(self.tok('\hello'))
 
 
@@ -326,7 +326,7 @@ class TestTeX(unittest.TestCase):
         res = expand_params(body, [par])
         self.assertEqual(res, list(self.tok('param')))
 
-        with self.assertRaises(TeXException):
+        with self.assertRaises(Exception):
             body = list(self.tok('#'))
             par = list(self.tok('param'))
             res = expand_params(body, [par])
