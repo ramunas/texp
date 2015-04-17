@@ -4,7 +4,7 @@
 class TeXException(Exception):
     pass
 
-class TeXMatchError(Exception):
+class MatchError(Exception):
     def __init__(self, msg, pos=None):
         super().__init__(msg, pos)
 
@@ -169,16 +169,16 @@ def read_control_sequence(bstream, state, catcode_table):
 
     n, bstream = bstream.next()
     if n is None:
-        raise TeXMatchError("End of file unexpected while parsing a control sequence")
+        raise MatchError("End of file unexpected while parsing a control sequence")
 
     n, pos = n
 
     if catcode_table[n] != CatCode.escape:
-        raise TeXMatchError("Escape char expected", pos)
+        raise MatchError("Escape char expected", pos)
 
     n, bstream = bstream.next()
     if n is None:
-        raise TeXMatchError("End of file unexpected while parsing a control sequence", pos)
+        raise MatchError("End of file unexpected while parsing a control sequence", pos)
 
     n, pos = n
 
@@ -295,16 +295,16 @@ def read_params(tokenstream):
                 try:
                     i = int(n.tok)
                 except ValueError:
-                    raise TeXMatchError("Invalid argument char '%s'" % n.tok, n.pos)
+                    raise MatchError("Invalid argument char '%s'" % n.tok, n.pos)
                 if i == 0:
-                    raise TeXMatchError("Parameter cannot be 0", n.pos)
+                    raise MatchError("Parameter cannot be 0", n.pos)
                 if i != arg_nr:
-                    raise TeXMatchError("Arguments need to be sequential", n.pos)
+                    raise MatchError("Arguments need to be sequential", n.pos)
                 args.append(curr_arg)
                 arg_nr = arg_nr + 1
                 curr_arg = []
             else:
-                raise TeXMatchError("Not an integer", n.pos)
+                raise MatchError("Not an integer", n.pos)
         elif has_catcode(t, CatCode.begin_group):
             tokenstream = prev_tokenstream
             args.append(curr_arg)
@@ -330,7 +330,7 @@ def read_body(tokenstream):
                 break
             body.append(t)
     else:
-        raise TeXMatchError("Failed to parse body", start_pos)
+        raise MatchError("Failed to parse body", start_pos)
     return (tokenstream, body)
 
 
@@ -350,17 +350,17 @@ def read_def(tokenstream):
     (cname, tokenstream) = tokenstream.next()
 
     if not(is_controlsequence(cname)):
-        raise TeXMatchError("Control sequence expected", cname.pos)
+        raise MatchError("Control sequence expected", cname.pos)
 
     (tokenstream, params) = read_params(tokenstream)
     (tokenstream, body) = read_body(tokenstream)
     h = find_highest_param(iter(body))
     if h == 0:
-        raise TeXMatchError("0 cannot be a parameter", cname.pos)
+        raise MatchError("0 cannot be a parameter", cname.pos)
     if h is None:
         h = 0
     if h > len(list(params)) - 1:
-        raise TeXMatchError("Body has undefined parameters", cname.pos)
+        raise MatchError("Body has undefined parameters", cname.pos)
     return (tokenstream, cname, params, body)
 
 
@@ -386,7 +386,7 @@ def next_group(tokenstream):
 
     t, _ = tokenstream.next()
     if t is None:
-        raise TeXMatchError("End of stream unexpected while reading a group")
+        raise MatchError("End of stream unexpected while reading a group")
 
     pos = t.pos
 
@@ -394,7 +394,7 @@ def next_group(tokenstream):
         t, tokenstream = tokenstream.next()
 
         if t is None:
-            raise TeXMatchError("End of stream unexpected while reading a group", pos)
+            raise MatchError("End of stream unexpected while reading a group", pos)
 
         if has_catcode(t, CatCode.begin_group):
             n += 1
@@ -437,7 +437,7 @@ def match_macro_pattern(pattern, tokenstream):
     for t in tokens:
         tok, tokenstream = tokenstream.next()
         if t != tok:
-            raise TeXMatchError("Pattern does not match", tok.pos)
+            raise MatchError("Pattern does not match", tok.pos)
 
     matches = []
     m = []
@@ -450,7 +450,7 @@ def match_macro_pattern(pattern, tokenstream):
         if len(tokens) == 0: # non-delimited token
             (ts, m) = next_token_or_group(ts)
             if m is None:
-                raise TeXMatchError("Stream ended while matching a macro pattern", pos)
+                raise MatchError("Stream ended while matching a macro pattern", pos)
             matches.append(m)
         else: # delimited, append until match is found
             while True:
@@ -462,7 +462,7 @@ def match_macro_pattern(pattern, tokenstream):
                 else:
                     (x, ts) = ts.next()
                     if x is None:
-                        raise TeXMatchError("Stream ended while matching a macro pattern", pos)
+                        raise MatchError("Stream ended while matching a macro pattern", pos)
                     m.append(x)
     return (ts, matches)
 
@@ -489,7 +489,7 @@ def define_macro(args, f):
         for i in args:
             (tokenstream, x) = next_token_or_group(tokenstream)
             if x is None:
-                raise TeXMatchError("End of stream while matching arguments")
+                raise MatchError("End of stream while matching arguments")
             if i == 'e':
                 a.append(list(expand(iter(x), state)))
             else:
@@ -525,13 +525,13 @@ def macro_catcode(state, t, n):
     n = list(expand(iter(n), state))
 
     if not (len(t) == 2 and all(is_tokencode(i) for i in t) and t[0].tok == '`'):
-        raise TeXMatchError("Unknown amount of arguments given to catcode")
+        raise MatchError("Unknown amount of arguments given to catcode")
 
     x = (i.tok for i in n)
     cc = int(''.join(x))
 
     if not (cc >= 0 and cc <= 15):
-        raise TeXMatchError("Unknown cat code given %d" % cc)
+        raise MatchError("Unknown cat code given %d" % cc)
 
     state.catcode[t[1].tok] = cc
 
