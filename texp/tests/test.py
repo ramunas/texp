@@ -1,4 +1,5 @@
 import unittest
+import texp
 from texp import *
 
 
@@ -20,6 +21,19 @@ class TestOther(unittest.TestCase):
 
         x = next(it)
         self.assertEqual(x, 3)
+
+    def test_stream_parser(self):
+        stream = func_stream(iter([1,2,3]))
+
+        p = parser().next().bind(lambda v: parser(v + 10))
+        (r,),s = p.parse(stream)
+        self.assertEqual(r, 11)
+
+        p = parser().sat(lambda v: v == 3) \
+            .alt(parser().sat(lambda v: v == 2)) \
+            .alt(parser().sat(lambda v: v == 1))
+        (r,), s = p.parse(stream)
+        self.assertEqual(r,1)
 
 
 

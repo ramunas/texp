@@ -293,6 +293,15 @@ defaultbuiltinmacros = macro_dict({
     'catcode' : macro_catcode
 })
 
+#
+# \macro.this
+#
+# \namespacestart{name}
+# \namespaceend{name}
+# \namespace{name}{ ... }
+#
+
+
 def expand(tokenstream, state=expansion_state(macros=defaultbuiltinmacros)):
     if not isinstance(tokenstream, func_stream):
         tokenstream = func_stream(tokenstream)
