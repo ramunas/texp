@@ -1,5 +1,3 @@
-# TODO: \let, \catcode
-
 from collections import namedtuple
 
 class MapStack():
@@ -65,6 +63,7 @@ def recursive_descent_matcher(rules, start, index, tokens):
                         matched = False
                         break
                     if x(tokens[i]):
+                        # print(tokens[i])
                         match.append(tokens[i])
                         i += 1
                     else:
@@ -133,7 +132,7 @@ class TeX():
     subscript   = 8   # Subscript, normally _
     ignored     = 9   # Ignored character, normally <null>
     space       = 10  # Space, normally <space> and <tab>
-    letter      = 11  # Letter, normally only contains the letters a,...,z and A,...,Z. These characters can be used in command names
+    letter      = 11  # Letter, normally only contains the letters a,...,z and A,...,Z.
     other       = 12  # Other, normally everything else not listed in the other categories
     active      = 13  # Active character, for example ~
     comment     = 14  # Comment character, normally %
@@ -224,12 +223,16 @@ class TeX():
         self.autotokens = self.T(size, get, populate)
 
         self.expanded_tokens = []
+        self.noexpand_followed_by = None
+        self.no_expand = False
         def esize(): return len(self.expanded_tokens)
         def eget(idx): return self.expanded_tokens[idx]
         def epopulate():
+            # print("EPopulate")
             t = self.autotokens[0]
+            # print(t)
             while True:
-                if t[1] == self.control_sequence:
+                if t[1] == self.control_sequence and not self.no_expand:
                     if t[0] in self.definitions:
                         self.expand()
                     else:
@@ -240,8 +243,13 @@ class TeX():
                     else:
                         raise TeXError("Undefined active character encountered `%s'" % t[0])
                 else:
+                    if t == self.noexpand_followed_by:
+                        self.no_expand = True
+                    else:
+                        self.no_expand = False
                     self.expanded_tokens.append(t)
                     self.tokens = self.tokens[1:]
+                    # print(self.expanded_tokens)
                     break
         self.autoexpandtokens = self.T(esize, eget, epopulate)
 
@@ -250,11 +258,14 @@ class TeX():
 
     def populate_with_default_macros(self):
         self.definitions['def'] = self.Functional([], [('def', self.command)])
+        self.definitions['let'] = self.Functional([], [('let', self.command)])
         # self.definitions['def'] = ([], [('def', self.command)])
         self.definitions['par'] = self.Functional([], [('par', self.command)])
         self.definitions['char'] = self.Functional([], [('char', self.command)])
+        self.definitions['catcode'] = self.Functional([], [('catcode', self.command)])
         self.definitions['relax'] = self.Builtin('relax')
-        for c in ' %#@!`~${}^&*': self.definitions[c] = self.Functional([], [(c, self.space)])
+        self.definitions[' '] = self.Functional([], [(' ', self.space)])
+        for c in '%#@!`~${}^&*': self.definitions[c] = self.Functional([], [(c, self.other)])
 
         # TODO: { } and \begin and \endgroup should not mix
         # self.definitions['begingroup'] = self.Functional([], [('{', self.begin_group)])
@@ -688,7 +699,7 @@ class TeX():
         if len(self.tokens) > 0 and self.isbuiltin(self.tokens[0], 'expandafter'):
             ts = self.autotokens
             t = ts[1] # the token to skip
-            _ = ts[2] # read after token
+            _ = ts[2] # read after the first token to trigger tokenisation
             self.tokens = self.tokens[2:]
             self.expand()
             self.tokens = [t] + self.tokens
@@ -846,27 +857,70 @@ class TeX():
 
     __commands__['char'] = command_char
 
-    # def command_let(self):
-    #     # TODO:
-    #     rules = [
-    #         ('t', [lambda t: t[1] == self.control_sequence], lambda x: x[0][0]),
-    #         ('=', [lambda t: t[0] == '='], lambda x : None),
-    #         ('=', [], lambda x: None),
-    #         ('x', [lambda t: True], lambda x: ),
-    #         ('let', 't=x', lambda x: chr(int(x[0]))),
-    #     ]
-    #     res = recursive_descent_matcher(rules, 'let', 1, self.auo.autotokens)
-    #     if res == None:
-    #         raise TeXError("Failed to parse a character number")
+    def command_catcode(self):
+        rules = [
+            ('`', [lambda t: t[0] == '`'], lambda x : None),
+            ('=', [lambda t: t[0] == '='], lambda x : None),
+            ('t', [lambda t: True], lambda x: x[0][0]),
+            (' ', [lambda t: t[1] == self.space], lambda x : None),
+            (' ', [], lambda x: None),
+            ('d', [lambda t: t[0].isnumeric()], lambda x: x[0][0]),
+            ('n', ['d', 'n'], lambda x: x[0] + x[1]),
+            ('n', ['d'], lambda x: x[0]),
+            ('i', 'n ', lambda x: int(x[0])),
+            ('catcode', '`t=i', lambda x: (x[1], x[3]))
+        ]
+        self.noexpand_followed_by = ('`', self.other)
+        self.tokens = self.tokens[1:]
+        res = recursive_descent_matcher(rules, 'catcode', 0, self.autoexpandtokens)
+        self.noexpand_followed_by = None
+        if res == None:
+            raise TeXError("Failed to parse a catcode")
 
-    #     (r, i) = res
+        ((t,n), i) = res
         
-    #     if (len(r) > 1):
-    #         raise TeXError("A single charecter control sequence is expected")
+        if (len(t) > 1):
+            raise TeXError("A single charecter control sequence is expected")
 
-    #     self.tokens = [(r, self.other)] + self.tokens[i:]
+        if n > 15:
+            raise TeXError("Unknown category code %d" % n)
 
-    # __commands__['let'] = command_let
+        self.catcode[t] = n
+
+        leftover = self.expanded_tokens[i:]
+        self.tokens = leftover + self.tokens
+        self.expanded_tokens = []
+
+
+    __commands__['catcode'] = command_catcode
+
+    def command_let(self):
+
+        ts = self.autotokens
+
+        cs = ts[1]
+        eq = ts[2]
+        t = ts[3]
+
+        # TODO cs could be also active character
+        if not cs[1] == self.control_sequence:
+            raise TeXError("Control sequence expected while handling \\let")
+
+        if not eq[0] == '=':
+            raise TeXError("Character = expected while handling \\let")
+
+        if t[1] == self.control_sequence:
+            if t[0] in self.definitions:
+                self.definitions[cs[0]] = self.definitions[t[0]]
+            else:
+                # TODO: should be undefined for the current group level
+                self.definitions[cs[0]] = None
+        else:
+            raise TeXError("Other than control sequences are currently not handled by \\let")
+
+        self.tokens = self.tokens[4:]
+
+    __commands__['let'] = command_let
 
     def define_macros(self):
         pass
@@ -934,6 +988,9 @@ t = HtmlTeX(content)
 # t = TeX("\\def~#1#2{Hell(#1,#2)} ~ab")
 # t = TeX("\\relax")
 # t = TeX("\\expandafter\\def\\csname Hello\\endcsname{World}\\Hello")
+# t = TeX("\\def\\Foo{Bar}\\expandafter \\Boo \\expandafter \\Boo \\Foo")
+# t = TeX("\\def\\a{Hello}\\let\\b=\\c \\b")
+# t = TeX("\\catcode`\\@=11 \\def\\@hello@{Hello, World}\\@hello@")
 # t.run()
 t.run()
 print()
