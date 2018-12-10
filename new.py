@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from collections import namedtuple
 
 class MapStack():
@@ -941,17 +943,13 @@ class TeX():
 
 
 
-class HtmlTeX(TeX):
-
-    def __init__(self, inp=''):
-        super().__init__(inp)
-        self.skip_space = False
+class TeXOutputStdout(TeX):
 
     def define_macros(self):
-        # cmds = ('tagOpen', 'tagClose', 'tagEndOpen', 'tagEndClose')
-        cmds = ()
-        for c in cmds:
-            self.define_command_macro(c)
+        pass
+        # # cmds = ('tagOpen', 'tagClose', 'tagEndOpen', 'tagEndClose')
+        # for c in cmds:
+        #     self.define_command_macro(c)
 
     def process_par(self):
         print()
@@ -964,12 +962,15 @@ class HtmlTeX(TeX):
         return False
 
 
-import os
-os.chdir('/Users/ramunas/MyProjects/Homepage/')
-f = open('/Users/ramunas/MyProjects/Homepage/main.tex', 'r')
-content = f.read()
-f.close()
-t = HtmlTeX(content)
+if __name__ == "__main__":
+    import sys
+    file = sys.argv[1]
+    f = open(file, 'r')
+    content = f.read()
+    f.close()
+    t = TeXOutputStdout(content)
+    t.run()
+
 
 # t = TeX("\\xyz{}\\def\\hello#1 #2{world #2} hello { xx }  \\code x \n\n  \n\n, w\norld!")
 # t = TeX("\\def\\hello#1 #2{world #2} hello { xx }  %\\code x \n\n  \n\n, w\norld!")
@@ -992,8 +993,8 @@ t = HtmlTeX(content)
 # t = TeX("\\def\\a{Hello}\\let\\b=\\c \\b")
 # t = TeX("\\catcode`\\@=11 \\def\\@hello@{Hello, World}\\@hello@")
 # t.run()
-t.run()
-print()
+# t.run()
+# print()
 # print(t.line, '|', sep='')
 # print(t.input, '|', sep='')
 # print(t.tokens)
