@@ -119,6 +119,7 @@ class TeX():
             l = self.line[0:size - len(toks)]
             i = self.input[0:size - len(toks) - len(l)]
             print('    "' + toks + l + i, '..."')
+            # print(self.tokens[0:20])
             pass
 
 
@@ -499,10 +500,12 @@ class TeX():
             ):
 
             t = self.tokens[0]
+
             if t[1] == self.active:
                 res = (t[0],)
             else:
                 res = t[0]
+
 
             # (params, body) = self.definitions[self.tokens[0][0]]
             (params, body) = self.definitions[res]
@@ -705,6 +708,7 @@ class TeX():
             self.tokens = self.tokens[2:]
             self.expand()
             self.tokens = [t] + self.tokens
+            return True
         return False
 
     __rules__['expander'].append(expand_expandafter)
