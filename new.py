@@ -231,10 +231,8 @@ class TeX():
         def esize(): return len(self.expanded_tokens)
         def eget(idx): return self.expanded_tokens[idx]
         def epopulate():
-            # print("EPopulate")
-            t = self.autotokens[0]
-            # print(t)
             while True:
+                t = self.autotokens[0]
                 if t[1] == self.control_sequence and not self.no_expand:
                     if t[0] in self.definitions:
                         self.expand()
@@ -500,12 +498,10 @@ class TeX():
             ):
 
             t = self.tokens[0]
-
             if t[1] == self.active:
                 res = (t[0],)
             else:
                 res = t[0]
-
 
             # (params, body) = self.definitions[self.tokens[0][0]]
             (params, body) = self.definitions[res]
@@ -874,7 +870,7 @@ class TeX():
             ('n', ['d', 'n'], lambda x: x[0] + x[1]),
             ('n', ['d'], lambda x: x[0]),
             ('i', 'n ', lambda x: int(x[0])),
-            ('catcode', '`t=i', lambda x: (x[1], x[3]))
+            ('catcode', '`t=i ', lambda x: (x[1], x[3]))
         ]
         self.noexpand_followed_by = ('`', self.other)
         self.tokens = self.tokens[1:]
