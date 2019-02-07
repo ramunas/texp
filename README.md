@@ -15,8 +15,7 @@ The way texp works is that it reads input, tokenises it, macro expands the token
 * `\ifx`, `\iftrue`, `\iffalse`
 * `\relax`
 * `\catcode`
-* active characters, e.g. 
-`\catcode\~=13  \def~{Foo} ~Bar` expands to `FooBar`.
+* active characters, e.g. ```\catcode`\~=13  \def~{Foo} ~Bar``` expands to `FooBar`.
 * `\input`
 * `\char`
 
