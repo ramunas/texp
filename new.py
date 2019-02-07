@@ -57,8 +57,8 @@ def recursive_descent_matcher(rules, start, index, tokens):
                         if res is None: 
                             matched = False
                             break
-                        (r, j) = res
-                        match.append(r)
+                        (res, j) = res
+                        match.append(res)
                         i = j
                 else: # terminal
                     if iseof(tokens, i):
@@ -215,7 +215,7 @@ class TeX():
         self.condition_level = 0
         self.populate_with_default_macros()
 
-        self.line_num = 1
+        self.line_num = 0
         self.file = ''
 
         self.token_state = []
@@ -310,6 +310,7 @@ class TeX():
                 self.line = self.input
                 self.input = ''
             self.state = self.new_line
+            self.line_num += 1
             return True
         return False
 
@@ -481,7 +482,7 @@ class TeX():
     def expander_macro_not_defined(self):
         if len(self.tokens) > 0 and self.tokens[0][1] == self.control_sequence and not (self.tokens[0][0] in self.definitions):
             # print ("Definition not found", self.tokens[0][0])
-            raise TeXError("Macro `%s' is not defined." % self.tokens[0][0])
+            raise TeXError("Macro `%s' is not defined on line %d of file %s." % (self.tokens[0][0], self.line_num, self.file))
         return False
 
     __rules__['command'].append(expander_macro_not_defined)
@@ -770,13 +771,15 @@ class TeX():
     __rules__['command'].append(command_token)
 
     def save_token_state(self):
-        self.token_state.append( (self.tokens, self.line, self.input) )
+        self.token_state.append( (self.tokens, self.line, self.input, self.line_num, self.file) )
 
     def restore_token_state(self):
-        (t, l, i) = self.token_state.pop()
+        (t, l, i, n, f) = self.token_state.pop()
         self.tokens = t
         self.line = l
         self.input = i
+        self.line_num = n
+        self.file = f
 
     def command_input(self):
         self.tokens = self.tokens[1:]
@@ -803,6 +806,8 @@ class TeX():
             self.tokens = []
             self.line = ''
             self.input = handle.read()
+            self.line_num = 0
+            self.file = filename
             handle.close()
         except FileNotFoundError:
             raise TeXError("File not found `%s'" % filename)
